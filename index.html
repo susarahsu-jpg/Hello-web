@@ -1,12 +1,3067 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>我的第一頁</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>代祭拜服務平台</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons UMD Build -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- lunar-javascript (精算節氣與農曆) -->
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.13/lunar.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sage: {
+                            50: '#f5f9f2',       
+                            100: '#e6f0de',      
+                            200: '#cbe2ba',      
+                            300: '#abd493',      
+                            400: '#89c16c',      
+                            500: '#68aa49',      
+                            600: '#4e8d31',      
+                            700: '#3c7125',
+                            800: '#2c531a',      
+                            850: '#203d13',      
+                            950: '#14270c',
+                        },
+                        hipster: {
+                            bg: '#f5f6f2',       
+                            card: '#ffffff',     
+                            border: '#e2e6db',   
+                            accent: '#b8735c',   
+                            accentHover: '#9a5c48'
+                        },
+                        gold: {
+                            400: '#e8b84b',      
+                            500: '#d4a017',
+                            950: '#2b2410'       
+                        }
+                    },
+                    animation: {
+                        'float': 'float 4s ease-in-out infinite',
+                        'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        },
+                        'pulse-subtle': {
+                            '0%, 100%': { opacity: 0.3, transform: 'scale(1)' },
+                            '50%': { opacity: 0.9, transform: 'scale(1.2)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+            background-color: #f5f6f2;
+            color: #1b2119;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .safe-pb {
+            padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+        }
+        .safe-pt {
+            padding-top: calc(1rem + env(safe-area-inset-top));
+        }
+        input[type="date"] {
+            color-scheme: light;
+            color: #1b2119;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: sepia(0.6) saturate(1.5) hue-rotate(60deg); 
+            cursor: pointer;
+            padding: 4px;
+        }
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+    </style>
 </head>
-<body>
-  <h1>Hello, Web!</h1>
-  <p>這一頁真的在網路上</p>
+<body class="flex flex-col min-h-screen">
+
+    <!-- 頂部導覽列 (App Header) -->
+    <header class="bg-hipster-card border-b border-hipster-border sticky top-0 z-50 px-4 py-3 safe-pt flex items-center justify-between shadow-xs">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-sage-100 border border-sage-300 flex items-center justify-center shadow-xs">
+                <i data-lucide="leaf" class="w-5 h-5 text-sage-600"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base text-sage-800 tracking-wider">代祭拜服務平台</h1>
+                <p class="text-[9px] text-sage-500">身不能至 · 溫暖直達 | 實體誠敬代辦</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <!-- 未登入狀態 -->
+            <button id="header-btn-login" onclick="switchTab('booking')" class="flex items-center space-x-1 bg-sage-50 hover:bg-sage-100 px-3 py-1.5 rounded-full border border-sage-200 transition">
+                <i data-lucide="user" class="w-3.5 h-3.5 text-sage-600"></i>
+                <span class="text-xs font-bold text-sage-700">會員登入</span>
+            </button>
+            <!-- 已登入狀態 (預設隱藏) -->
+            <div id="header-user-badge" class="hidden flex items-center space-x-2">
+                <div class="flex items-center space-x-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span id="header-user-name" class="text-xs font-bold text-emerald-800">陳孝親 居士</span>
+                </div>
+                <button onclick="handleLogout()" class="p-1.5 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition" title="登出帳號">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主體內容區 -->
+    <main class="flex-grow overflow-y-auto no-scrollbar pb-24">
+        
+        <!-- 頁面 1：首頁大廳 -->
+        <section id="tab-home" class="page-tab px-4 py-4 space-y-6">
+            <!-- 宣傳橫幅 -->
+            <div class="relative bg-gradient-to-br from-sage-500 to-sage-700 rounded-2xl p-5 border border-sage-400/30 shadow-sm overflow-hidden">
+                <div class="absolute right-[-20px] bottom-[-20px] opacity-10 text-white">
+                    <i data-lucide="flower" class="w-48 h-48"></i>
+                </div>
+                <div class="relative z-10 space-y-2 max-w-[72%]">
+                    <span class="bg-white/20 text-white text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full border border-white/25">實體代辦 · 全程高清影音回執</span>
+                    <h2 class="text-lg font-bold text-white tracking-wide">我們相信，思念沒有距離</h2>
+                    <p class="text-xs text-sage-100/90 leading-relaxed font-light">專人前往指定納骨塔與墓園，代您進行清掃、敬獻花果與香火，並拍攝高清寫真與影片回報，讓思念隨風而至。</p>
+                    <button onclick="switchTab('booking')" class="mt-2 px-4 py-1.5 bg-white hover:bg-sage-50 text-sage-700 font-bold text-xs rounded-full shadow-xs transition transform active:scale-95 flex items-center space-x-1">
+                        <span>預約實體服務</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <div class="absolute right-4 bottom-4 w-16 h-16 bg-white/10 rounded-full border border-white/15 flex items-center justify-center animate-float">
+                    <i data-lucide="sparkles" class="w-8 h-8 text-white/80"></i>
+                </div>
+            </div>
+
+            <!-- 三大快捷入口 -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="switchTab('memorial')" class="bg-hipster-card border border-hipster-border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-sage-400 hover:bg-sage-50 transition active:scale-95 shadow-xs">
+                    <div class="w-10 h-10 bg-sage-50 rounded-full flex items-center justify-center mb-1.5 border border-sage-100">
+                        <i data-lucide="book-open" class="w-5 h-5 text-sage-600"></i>
+                    </div>
+                    <span class="text-xs font-bold text-sage-800">登記名冊</span>
+                </button>
+                <button onclick="switchTab('booking')" class="bg-hipster-card border border-hipster-border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-sage-400 hover:bg-sage-50 transition active:scale-95 shadow-xs">
+                    <div class="w-10 h-10 bg-sage-50 rounded-full flex items-center justify-center mb-1.5 border border-sage-100">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-hipster-accent"></i>
+                    </div>
+                    <span class="text-xs font-bold text-sage-800">委託預約</span>
+                </button>
+                <button onclick="switchTab('reports')" class="bg-hipster-card border border-hipster-border rounded-xl p-3 flex flex-col items-center justify-center text-center hover:border-sage-400 hover:bg-sage-50 transition active:scale-95 shadow-xs">
+                    <div class="w-10 h-10 bg-sage-50 rounded-full flex items-center justify-center mb-1.5 border border-sage-100">
+                        <i data-lucide="clapperboard" class="w-5 h-5 text-amber-600"></i>
+                    </div>
+                    <span class="text-xs font-bold text-sage-800">影像回報</span>
+                </button>
+            </div>
+
+            <!-- 熱門代辦項目 -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-sage-800 flex items-center space-x-2">
+                        <span class="w-1 h-4 bg-sage-500 rounded"></span>
+                        <span>精選實體代辦項目</span>
+                    </h3>
+                    <button onclick="switchTab('booking')" class="text-xs text-sage-500 hover:text-sage-700 flex items-center font-bold">
+                        <span>查看全部</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-hipster-card border border-hipster-border rounded-xl p-4 flex space-x-3 hover:border-sage-400 transition shadow-xs">
+                        <div class="w-20 h-20 rounded-lg bg-cover bg-center flex-shrink-0 border border-hipster-border flex items-center justify-center" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=200&auto=format&fit=crop');">
+                            <span class="text-white font-bold text-xs shadow-xs">實地祭祖</span>
+                        </div>
+                        <div class="flex-grow flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-sm text-sage-850">節日/清明重陽實體代祭拜</h4>
+                                <p class="text-[11px] text-gray-500 line-clamp-1 mt-0.5">專人前往墓地，清理雜草、獻花果、三炷上香、全程影音回報。</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-xs font-bold text-hipster-accent">NT$ 1,800 起</span>
+                                <button onclick="selectBookingService('節日', 1800)" class="px-3 py-1 bg-sage-500 hover:bg-sage-600 text-white rounded-full text-xs font-semibold transition active:scale-95 shadow-xs">
+                                    立即預約
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-hipster-card border border-hipster-border rounded-xl p-4 flex space-x-3 hover:border-sage-400 transition shadow-xs">
+                        <div class="w-20 h-20 rounded-lg bg-cover bg-center flex-shrink-0 border border-hipster-border flex items-center justify-center" style="background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1508193638397-1c4234db14d8?q=80&w=200&auto=format&fit=crop');">
+                            <span class="text-white font-bold text-xs shadow-xs">祈福誦經</span>
+                        </div>
+                        <div class="flex-grow flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-sm text-sage-850">初一/十五 寺廟誦經迴向</h4>
+                                <p class="text-[11px] text-gray-500 line-clamp-1 mt-0.5">於配合佛寺由法師代誦經超薦、奉化疏文並回傳現場畫面。</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-2">
+                                <span class="text-xs font-bold text-hipster-accent">NT$ 1,200 起</span>
+                                <button onclick="selectBookingService('一般祭拜', 1200)" class="px-3 py-1 bg-sage-500 hover:bg-sage-600 text-white rounded-full text-xs font-semibold transition active:scale-95 shadow-xs">
+                                    立即預約
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代祭拜安心流程 (調正字體階層與比例) -->
+            <div class="bg-hipster-card border border-hipster-border rounded-xl p-4 space-y-3 shadow-xs">
+                <h4 class="font-bold text-sage-800 text-xs flex items-center space-x-1.5">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-sage-500"></i>
+                    <span>實體代辦四大安心流程</span>
+                </h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div class="p-2.5 bg-sage-50/50 rounded-xl border border-hipster-border/50 flex flex-col justify-center space-y-0.5">
+                        <div class="text-sage-700 font-bold text-[11px]">1. 登記先人</div>
+                        <p class="text-[10px] text-gray-500 leading-normal font-light">地圖點選或手動填寫位置</p>
+                    </div>
+                    <div class="p-2.5 bg-sage-50/50 rounded-xl border border-hipster-border/50 flex flex-col justify-center space-y-0.5">
+                        <div class="text-sage-700 font-bold text-[11px]">2. 彈性加購</div>
+                        <p class="text-[10px] text-gray-500 leading-normal font-light">依先人喜好加辦香花供品</p>
+                    </div>
+                    <div class="p-2.5 bg-sage-50/50 rounded-xl border border-hipster-border/50 flex flex-col justify-center space-y-0.5">
+                        <div class="text-sage-700 font-bold text-[11px]">3. 依禮敬祀</div>
+                        <p class="text-[10px] text-gray-500 leading-normal font-light">代辦員依禮儀流程虔誠執行</p>
+                    </div>
+                    <div class="p-2.5 bg-sage-50/50 rounded-xl border border-hipster-border/50 flex flex-col justify-center space-y-0.5">
+                        <div class="text-sage-700 font-bold text-[11px]">4. 影音驗收</div>
+                        <p class="text-[10px] text-gray-500 leading-normal font-light">專屬回報專區看高清實況</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 全局登入防護攔截面板 (Auth Gate) -->
+        <section id="auth-gate-container" class="page-tab px-4 py-8 hidden flex flex-col justify-center items-center">
+            <div class="bg-hipster-card border border-hipster-border rounded-2xl p-6 w-full max-w-sm text-center shadow-md space-y-5">
+                <div class="w-16 h-16 mx-auto bg-sage-50 rounded-full border border-sage-200 flex items-center justify-center animate-bounce">
+                    <i data-lucide="lock" class="w-7 h-7 text-sage-600"></i>
+                </div>
+
+                <!-- 登入面板 -->
+                <div id="auth-login-view" class="space-y-4">
+                    <div class="space-y-1">
+                        <h3 class="font-bold text-sage-800 text-base">慎終追遠 · 靈性安頓</h3>
+                        <p class="text-xs text-gray-500">此功能涉及先人資料隱私與影音回報紀錄，請登入以檢視您的過往委託設定。</p>
+                    </div>
+
+                    <form id="auth-form" onsubmit="handleLoginSubmit(event)" class="space-y-3 text-left">
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">電子信箱 *</label>
+                            <div class="relative">
+                                <i data-lucide="mail" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="email" id="auth-username" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="user@example.com" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">密碼 *</label>
+                            <div class="relative">
+                                <i data-lucide="key-round" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="password" id="auth-password" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="請輸入密碼" required />
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-lg text-xs tracking-wider transition active:scale-[0.98] shadow-xs">
+                            登入會員
+                        </button>
+                    </form>
+
+                    <div class="text-xs text-center text-gray-500 mt-2">
+                        還沒有帳號？ <button type="button" onclick="toggleAuthMode('register')" class="text-sage-600 hover:text-sage-700 font-bold underline transition">立即註冊</button>
+                    </div>
+                </div>
+
+                <!-- 註冊面板 -->
+                <div id="auth-register-view" class="hidden space-y-4">
+                    <div class="space-y-1">
+                        <h3 class="font-bold text-sage-800 text-base">思念有恆 · 加入名冊</h3>
+                        <p class="text-xs text-gray-500">註冊專屬會員，隨時守護、登記與排程先人的實體代辦祭拜設定。</p>
+                    </div>
+
+                    <form id="register-form" onsubmit="handleRegisterSubmit(event)" class="space-y-3 text-left">
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">電子信箱 *</label>
+                            <div class="relative">
+                                <i data-lucide="mail" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="email" id="reg-email" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="請輸入 Email 作為帳號" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">登入密碼 *</label>
+                            <div class="relative">
+                                <i data-lucide="key-round" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="password" id="reg-password" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="請設定 6 位數以上密碼" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">真實姓名 *</label>
+                            <div class="relative">
+                                <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="text" id="reg-name" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="例如：陳孝親" required />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-sage-700 mb-1">聯絡電話</label>
+                            <div class="relative">
+                                <i data-lucide="phone" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                                <input type="tel" id="reg-phone" class="w-full bg-sage-50 border border-hipster-border rounded-lg pl-9 pr-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="例如：0912345678" />
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-lg text-xs tracking-wider transition active:scale-[0.98] shadow-xs">
+                            確認註冊
+                        </button>
+                    </form>
+
+                    <div class="text-xs text-center text-gray-500 mt-2">
+                        已經有帳號？ <button type="button" onclick="toggleAuthMode('login')" class="text-sage-600 hover:text-sage-700 font-bold underline transition">返回登入</button>
+                    </div>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-hipster-border"></div>
+                    <span class="flex-shrink mx-4 text-[10px] text-gray-400 font-light">極速免密體驗</span>
+                    <div class="flex-grow border-t border-hipster-border"></div>
+                </div>
+
+                <button type="button" onclick="quickDemoLogin()" class="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg text-xs border border-amber-200 tracking-wider transition flex items-center justify-center space-x-1">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>一鍵示範登入 (輕鬆測試)</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 頁面 2：代辦預約與進度 -->
+        <section id="tab-booking" class="page-tab px-4 py-4 space-y-6 hidden">
+            <div class="bg-hipster-card border border-hipster-border rounded-xl p-5 space-y-4 shadow-xs">
+                <div class="flex items-center space-x-2 border-b border-hipster-border pb-3">
+                    <i data-lucide="file-text" class="w-5 h-5 text-sage-600"></i>
+                    <h3 class="font-bold text-base text-sage-800">實體代辦祭拜預約</h3>
+                </div>
+
+                <!-- 快速導入功能區 -->
+                <div class="space-y-1.5 p-3.5 bg-sage-50 rounded-xl border border-sage-200">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-sage-800 flex items-center space-x-1">
+                            <i data-lucide="history" class="w-4 h-4 text-sage-600"></i>
+                            <span>快速導入歷史委託</span>
+                        </label>
+                        <span class="text-[9px] text-gray-500 font-light">複用設定後可再修改</span>
+                    </div>
+                    <select id="booking-import-select" onchange="onBookingImportSelectChange(this)" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400">
+                        <option value="">-- 選擇過往委託直接載入 --</option>
+                    </select>
+                </div>
+
+                <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="space-y-4">
+                    <!-- 選擇服務項目 -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-sage-700 mb-1">1. 選擇代辦服務項目</label>
+                            <select id="booking-service" onchange="onServiceChange()" class="w-full bg-sage-50 border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required>
+                                <option value="一般祭拜">一般祭拜 (NT$1,200)</option>
+                                <option value="週年忌日">週年忌日 (NT$1,500)</option>
+                                <option value="節日">特定節日代辦 (NT$1,800)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 節日二級選單 -->
+                        <div id="sub-festival-container" class="hidden transition-all duration-300">
+                            <label class="block text-xs font-bold text-sage-700 mb-1">特定節日選擇</label>
+                            <select id="booking-sub-festival" onchange="onSubFestivalChange()" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400">
+                                <option value="除夕">除夕</option>
+                                <option value="元宵">元宵</option>
+                                <option value="清明">清明</option>
+                                <option value="端午">端午</option>
+                                <option value="中元 (中原)">中元 (中原)</option>
+                                <option value="中秋">中秋</option>
+                                <option value="重陽">重陽</option>
+                                <option value="冬至">冬至</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 選擇先人與歿者姓名 -->
+                    <div class="space-y-3 bg-sage-50/30 p-3 rounded-lg border border-hipster-border/50">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold text-sage-700">2. 選擇已登記先人 (連動)</label>
+                            <span class="text-[9px] text-gray-500 font-light">一鍵快速帶入</span>
+                        </div>
+                        <select id="booking-deceased-select" onchange="onBookingDeceasedSelectChange(this)" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400">
+                            <option value="manual">-- 手動輸入代辦資料 --</option>
+                        </select>
+
+                        <div class="pt-2">
+                            <label class="block text-xs font-bold text-sage-700 mb-1">歿者姓名 <span class="text-gray-400 font-normal">(限填一位)</span></label>
+                            <input type="text" id="booking-deceased" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400 transition-colors" placeholder="例如：先嚴 〇公 府君" required />
+                        </div>
+                    </div>
+
+                    <!-- 陽上報恩人 (最多6位) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-sage-700">3. 陽上報恩人 (最多6位)</label>
+                            <button type="button" onclick="addBeneficiaryField()" id="btn-add-beneficiary" class="text-xs text-hipster-accent hover:text-hipster-accentHover flex items-center space-x-1 font-bold">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                                <span>增加一位</span>
+                            </button>
+                        </div>
+                        <div id="beneficiary-fields-container" class="space-y-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="text" class="beneficiary-input w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="例如：孝子 〇〇" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 預定祭拜日期 (虛擬日曆選擇器) -->
+                    <div class="relative">
+                        <label class="block text-xs font-bold text-sage-700 mb-1">4. 預定祭拜日期 <span class="text-hipster-accent font-bold">(須至少於 7 天前預約)</span></label>
+                        <button type="button" id="booking-date-field" onclick="openDatePicker(event)" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400 flex items-center justify-between">
+                            <span id="booking-date-display" class="text-gray-400">請選擇日期</span>
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-sage-500 flex-shrink-0"></i>
+                        </button>
+                        <input type="hidden" id="booking-date" required />
+                        <div id="booking-date-hint" class="hidden text-[10px] text-amber-600 font-bold mt-1"></div>
+
+                        <!-- 虛擬日曆彈出視窗 -->
+                        <div id="date-picker-popup" onwheel="handleCalendarWheel(event)" class="hidden absolute z-40 mt-1 left-0 right-0 bg-white border border-hipster-border rounded-xl shadow-lg p-3">
+                            <div id="calendar-header" class="relative flex items-center justify-between mb-2">
+                                <button type="button" id="calendar-prev-month" onclick="changeCalendarMonth(-1)" class="w-7 h-7 rounded-full hover:bg-sage-50 flex items-center justify-center text-sage-600">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                </button>
+                                <button type="button" id="calendar-month-label" onclick="toggleCalendarYmPicker(event)" class="text-sm font-bold text-sage-800 hover:text-sage-600 hover:bg-sage-50 px-2 py-0.5 rounded-md transition"></button>
+                                <button type="button" id="calendar-next-month" onclick="changeCalendarMonth(1)" class="w-7 h-7 rounded-full hover:bg-sage-50 flex items-center justify-center text-sage-600">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+
+                                <div id="calendar-ym-picker" class="hidden absolute left-1/2 -translate-x-1/2 top-8 z-50 bg-white border border-hipster-border rounded-lg shadow-lg p-2 flex items-center space-x-1">
+                                    <select id="calendar-year-select" onchange="onCalendarYmPickerChange()" class="text-xs font-semibold border border-hipster-border rounded px-1 py-1 bg-white text-sage-800 focus:outline-none"></select>
+                                    <span class="text-xs text-gray-500">年</span>
+                                    <select id="calendar-month-select" onchange="onCalendarYmPickerChange()" class="text-xs font-semibold border border-hipster-border rounded px-1 py-1 bg-white text-sage-800 focus:outline-none"></select>
+                                    <span class="text-xs text-gray-500">月</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center mb-1">
+                                <span class="text-xs text-sage-600 font-bold">日</span>
+                                <span class="text-xs text-sage-600 font-bold">一</span>
+                                <span class="text-xs text-sage-600 font-bold">二</span>
+                                <span class="text-xs text-sage-600 font-bold">三</span>
+                                <span class="text-xs text-sage-600 font-bold">四</span>
+                                <span class="text-xs text-sage-600 font-bold">五</span>
+                                <span class="text-xs text-sage-600 font-bold">六</span>
+                            </div>
+                            <div id="calendar-days-grid" class="grid grid-cols-7 gap-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- 祭品商品加購 -->
+                    <div class="space-y-3 bg-sage-50/50 p-4 rounded-xl border border-hipster-border">
+                        <label class="block text-xs font-bold text-sage-700 flex items-center space-x-1">
+                            <i data-lucide="shopping-bag" class="w-4 h-4 text-sage-600"></i>
+                            <span>5. 實體祭品加購 (專員現場採購敬獻)</span>
+                        </label>
+                        <div class="grid grid-cols-1 gap-2.5">
+                            <!-- 節日限定祭品 -->
+                            <div id="addon-card-festival" class="hidden flex items-center justify-between bg-amber-50/50 p-3 rounded-lg border border-amber-300 shadow-2xs transition-all">
+                                <div class="flex-grow pr-4">
+                                    <div class="flex items-center space-x-1 mb-0.5">
+                                        <span class="bg-amber-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">節日限定</span>
+                                        <div id="festival-addon-name" class="text-xs font-bold text-sage-800">年糕發糕雙輝盤</div>
+                                    </div>
+                                    <div id="festival-addon-desc" class="text-[9px] text-gray-500">歲末守歲除舊歲，步步高升好彩頭</div>
+                                    <div id="festival-addon-price" class="text-[11px] font-bold text-hipster-accent mt-1">NT$ 200 / 份</div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button type="button" onclick="adjustAddonQty('festival', -1)" class="w-6 h-6 rounded-full bg-sage-50 text-sage-700 hover:bg-sage-100 flex items-center justify-center font-bold text-xs transition active:scale-90 border border-sage-200">-</button>
+                                    <span id="addon-qty-festival" class="w-6 text-center text-xs font-bold text-sage-800">0</span>
+                                    <button type="button" onclick="adjustAddonQty('festival', 1)" class="w-6 h-6 rounded-full bg-sage-50 text-sage-700 hover:bg-sage-100 flex items-center justify-center font-bold text-xs transition active:scale-90 border border-sage-200">+</button>
+                                </div>
+                            </div>
+
+                            <div id="addon-cards-standard" class="space-y-2.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- 實地祭拜心願交代 -->
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">6. 實地祭拜宣讀疏文 / 心願交代</label>
+                        <textarea id="booking-pray" rows="3" placeholder="請填寫代辦員實地祭拜時需向先人秉報之言。例如：弟子〇〇敬獻，祈求先人庇佑家人身體安康..." class="w-full bg-white border border-hipster-border rounded-lg p-3 text-xs text-sage-800 focus:outline-none focus:border-sage-400"></textarea>
+                    </div>
+
+                    <!-- 費用結算 -->
+                    <div class="bg-sage-50 border border-sage-200 rounded-lg p-3 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 font-light">基礎代辦費用</span>
+                            <span id="booking-fee" class="font-bold text-sage-800">NT$ 1,200</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 font-light">加購祭品小計</span>
+                            <span id="booking-addons-fee" class="font-bold text-sage-800">NT$ 0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-gray-600 font-light">現場影音回報</span>
+                            <span class="text-sage-600 font-bold">全程包含</span>
+                        </div>
+                        <div class="border-t border-sage-200 pt-2 flex items-center justify-between text-xs">
+                            <span class="font-bold text-sage-800">付款總額</span>
+                            <span id="booking-total" class="font-bold text-hipster-accent text-sm">NT$ 1,200</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-lg text-xs tracking-wider transition active:scale-[0.98] shadow-xs">
+                        送出代辦委託
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 頁面 3：先人名冊與牌位登記 -->
+        <section id="tab-memorial" class="page-tab px-4 py-4 space-y-6 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-sage-800 text-sm">委託代辦先人名冊</h3>
+                    <p class="text-[10px] text-gray-500 font-light">登記您需安排代祭拜的先人資料與墓位</p>
+                </div>
+                <button onclick="toggleAddMemorialModal(true)" class="px-3 py-1.5 bg-sage-600 hover:bg-sage-700 text-white rounded-full text-xs font-bold flex items-center space-x-1 shadow-xs">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>登記新先人</span>
+                </button>
+            </div>
+
+            <div id="memorial-grid" class="grid grid-cols-2 gap-4">
+                <!-- 動態注入 -->
+            </div>
+        </section>
+
+        <!-- 頁面 4：實地影音回報專區 -->
+        <section id="tab-reports" class="page-tab px-4 py-4 space-y-6 hidden">
+            <div class="space-y-1">
+                <h3 class="font-bold text-sage-800 text-sm">實地影音回報專區</h3>
+                <p class="text-[10px] text-gray-500 font-light">展示現場代祭之真實影像回執，100% 流程全記錄</p>
+            </div>
+
+            <!-- 篩選先人 -->
+            <div class="flex items-center space-x-2 bg-hipster-card border border-hipster-border p-3 rounded-xl shadow-xs">
+                <span class="text-xs font-bold text-sage-700 whitespace-nowrap">回報篩選：</span>
+                <select id="report-filter" onchange="filterReportsByAncestor()" class="w-full bg-sage-50 border border-hipster-border rounded-lg px-2.5 py-1 text-xs text-sage-800 focus:outline-none">
+                    <option value="all">-- 全部先人影音回報 --</option>
+                </select>
+            </div>
+
+            <!-- 1. 安排中 / 進行中委託 -->
+            <div class="space-y-2.5">
+                <h4 class="font-bold text-xs text-sage-800 flex items-center space-x-1.5 border-b border-hipster-border pb-1.5">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                    <span>安排與進行中委託</span>
+                </h4>
+                <div id="pending-reports-container" class="space-y-2">
+                    <!-- 動態填充 -->
+                </div>
+            </div>
+
+            <!-- 2. 已圓滿歷史回報 -->
+            <div class="space-y-2.5 pt-2">
+                <h4 class="font-bold text-xs text-sage-800 flex items-center space-x-1.5 border-b border-hipster-border pb-1.5">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    <span>已圓滿歷史回報</span>
+                </h4>
+                <div id="completed-reports-container" class="space-y-2">
+                    <!-- 動態填充 -->
+                </div>
+            </div>
+
+            <!-- 每日平安籤 -->
+            <div class="bg-hipster-card border border-hipster-border rounded-xl p-5 text-center space-y-4 shadow-xs">
+                <div class="w-14 h-14 mx-auto bg-sage-50 rounded-full border border-sage-200 flex items-center justify-center">
+                    <i data-lucide="message-square" class="w-6 h-6 text-sage-600"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sage-800 text-xs">每日平安禪意籤</h4>
+                    <p class="text-[11px] text-gray-500 mt-1 font-light">為生者祈福，抽取一籤，沉澱浮躁心靈</p>
+                </div>
+                <button onclick="drawDailyFortune()" class="px-5 py-2 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-full text-xs shadow-xs active:scale-95 transition">
+                    抽取今日平安籤
+                </button>
+            </div>
+        </section>
+
+        <!-- 頁面 5：個人帳號管理 -->
+        <section id="tab-profile" class="page-tab px-4 py-4 space-y-6 hidden">
+            <div class="bg-hipster-card border border-hipster-border rounded-xl p-5 space-y-4 shadow-xs">
+                <div class="flex items-center space-x-2 border-b border-hipster-border pb-3">
+                    <i data-lucide="user-round-cog" class="w-5 h-5 text-sage-600"></i>
+                    <h3 class="font-bold text-base text-sage-800">個人基本資料修改</h3>
+                </div>
+
+                <form id="profile-form" onsubmit="handleProfileUpdate(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">帳號 / 電子信箱 * <span class="text-[10px] text-gray-400 font-normal">(修改需重新驗證)</span></label>
+                        <div class="flex space-x-2">
+                            <div class="relative flex-grow">
+                                <input type="email" id="profile-email" oninput="onEmailChange()" class="w-full bg-white border border-hipster-border rounded-lg pl-3 pr-16 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400 font-bold" required />
+                                <span id="profile-email-verified-badge" class="absolute right-2.5 top-2.5 text-[9px] font-bold text-emerald-600 flex items-center space-x-0.5">
+                                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                    <span>已驗證</span>
+                                </span>
+                            </div>
+                            <button type="button" id="btn-verify-email" onclick="sendVerificationCode('email')" class="hidden px-3.5 py-2 bg-sage-100 hover:bg-sage-200 text-sage-800 font-bold text-xs rounded-lg border border-sage-300 transition active:scale-95 whitespace-nowrap">
+                                驗證
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">真實姓名 *</label>
+                        <input type="text" id="profile-name" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required />
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">聯絡電話 * <span class="text-[10px] text-gray-400 font-normal">(修改需重新驗證)</span></label>
+                        <div class="flex space-x-2">
+                            <div class="relative flex-grow">
+                                <input type="tel" id="profile-phone" oninput="onPhoneChange()" class="w-full bg-white border border-hipster-border rounded-lg pl-3 pr-16 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400 font-bold" required />
+                                <span id="profile-phone-verified-badge" class="absolute right-2.5 top-2.5 text-[9px] font-bold text-emerald-600 flex items-center space-x-0.5">
+                                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                    <span>已驗證</span>
+                                </span>
+                            </div>
+                            <button type="button" id="btn-verify-phone" onclick="sendVerificationCode('phone')" class="hidden px-3.5 py-2 bg-sage-100 hover:bg-sage-200 text-sage-800 font-bold text-xs rounded-lg border border-sage-300 transition active:scale-95 whitespace-nowrap">
+                                驗證
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-lg text-xs tracking-wider transition active:scale-[0.98] shadow-xs">
+                        儲存基本資料修改
+                    </button>
+                </form>
+            </div>
+
+            <!-- 安全與密碼修改卡片 -->
+            <div class="bg-hipster-card border border-hipster-border rounded-xl p-5 space-y-4 shadow-xs">
+                <div class="flex items-center space-x-2 border-b border-hipster-border pb-3">
+                    <i data-lucide="lock" class="w-5 h-5 text-hipster-accent"></i>
+                    <h3 class="font-bold text-base text-sage-800">安全與密碼變更</h3>
+                </div>
+
+                <form id="password-form" onsubmit="handlePasswordUpdate(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">原密碼 *</label>
+                        <div class="relative">
+                            <input type="password" id="password-old" placeholder="請輸入舊密碼" class="w-full bg-white border border-hipster-border rounded-lg px-3 pr-10 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required />
+                            <button type="button" onclick="togglePasswordVisibility('password-old', this)" tabindex="-1" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sage-600 transition">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">新密碼 *</label>
+                        <div class="relative">
+                            <input type="password" id="password-new" placeholder="請輸入新密碼" class="w-full bg-white border border-hipster-border rounded-lg px-3 pr-10 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required />
+                            <button type="button" onclick="togglePasswordVisibility('password-new', this)" tabindex="-1" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sage-600 transition">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">再次確認新密碼 *</label>
+                        <div class="relative">
+                            <input type="password" id="password-new-confirm" placeholder="再次確認新密碼" class="w-full bg-white border border-hipster-border rounded-lg px-3 pr-10 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required />
+                            <button type="button" onclick="togglePasswordVisibility('password-new-confirm', this)" tabindex="-1" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sage-600 transition">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-hipster-accent hover:bg-hipster-accentHover text-white font-bold rounded-lg text-xs tracking-wider transition active:scale-[0.98] shadow-xs">
+                        安全變更密碼 (變更後需重新登入)
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部導覽欄 (App Navigation Bar) -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-hipster-card border-t border-hipster-border px-1 py-2 safe-pb flex justify-around items-center z-50 shadow-md">
+        <button id="nav-home" onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center w-14 text-sage-600">
+            <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[9px] font-bold">大廳</span>
+        </button>
+        <button id="nav-booking" onclick="switchTab('booking')" class="nav-btn flex flex-col items-center justify-center w-14 text-gray-400">
+            <i data-lucide="calendar-heart" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[9px] font-bold">代辦預約</span>
+        </button>
+        <button id="nav-memorial" onclick="switchTab('memorial')" class="nav-btn flex flex-col items-center justify-center w-14 text-gray-400">
+            <i data-lucide="book-open" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[9px] font-bold">先人登記</span>
+        </button>
+        <button id="nav-reports" onclick="switchTab('reports')" class="nav-btn flex flex-col items-center justify-center w-14 text-gray-400">
+            <i data-lucide="clapperboard" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[9px] font-bold">影音回報</span>
+        </button>
+        <button id="nav-profile" onclick="switchTab('profile')" class="nav-btn flex flex-col items-center justify-center w-14 text-gray-400">
+            <i data-lucide="user-round-cog" class="w-5 h-5 mb-0.5"></i>
+            <span class="text-[9px] font-bold">帳號管理</span>
+        </button>
+    </nav>
+
+    <!-- 彈出窗 1：新增先人資料 (整合區域地圖) -->
+    <div id="add-memorial-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-hipster-card border border-hipster-border rounded-xl w-full max-w-md p-5 space-y-4 shadow-xl overflow-y-auto max-h-[90vh] no-scrollbar">
+            <div class="flex items-center justify-between border-b border-hipster-border pb-2">
+                <h3 class="font-bold text-sage-800 text-sm">登記新先人位置</h3>
+                <button onclick="toggleAddMemorialModal(false)" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-sage-700 mb-1">歿者姓名 *</label>
+                    <input type="text" id="new-mem-name" placeholder="例如：先嚴 〇公 府君" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" required />
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">出生年份</label>
+                        <input type="text" id="new-mem-birth" placeholder="如 民國 15 年" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-sage-700 mb-1">忌辰年份</label>
+                        <input type="text" id="new-mem-death" placeholder="如 民國 111 年" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" />
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-sage-700 flex items-center space-x-1">
+                        <i data-lucide="map" class="w-4 h-4 text-hipster-accent"></i>
+                        <span>北區合作陵園 · 區域定位地圖 (請點選金色光點)</span>
+                    </label>
+                    <div class="relative w-full h-52 bg-gradient-to-br from-[#dbe8ee] to-[#e9f0e6] rounded-xl overflow-hidden border border-hipster-border shadow-inner">
+                        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="landGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#dbe8c9" />
+                                    <stop offset="100%" stop-color="#c3d6ac" />
+                                </linearGradient>
+                                <pattern id="seaTexture" width="16" height="16" patternUnits="userSpaceOnUse">
+                                    <circle cx="2" cy="2" r="1.1" fill="#bcd3dd" />
+                                </pattern>
+                            </defs>
+                            <rect x="0" y="0" width="400" height="200" fill="url(#seaTexture)" opacity="0.6" />
+                            <path d="M 0,200 L 0,150 C 40,135 60,105 80,90 C 85,85 92,80 97,76 L 104,76 C 108,70 118,45 138,30 C 158,15 188,10 213,15 C 238,20 263,30 288,40 C 313,50 333,50 358,65 C 378,77 392,95 400,110 L 400,200 Z" fill="url(#landGradient)" stroke="#8fa67f" stroke-width="2" />
+                            <path d="M 99,77 Q 105,110 125,130 Q 145,145 155,180" fill="none" stroke="#a9c6d6" stroke-width="5" stroke-linecap="round" opacity="0.9" />
+                            <path d="M 125,130 Q 190,120 225,115 Q 265,110 285,75" fill="none" stroke="#a9c6d6" stroke-width="3.5" stroke-linecap="round" opacity="0.9" />
+                            <path d="M 158,82 L 172,62 L 186,82 M 174,82 L 188,64 L 202,82" fill="none" stroke="#71875f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <g transform="translate(368,28)" opacity="0.9">
+                                <circle r="17" fill="#ffffff" stroke="#8fa67f" stroke-width="1.5" />
+                                <path d="M 0,-11 L 4,0 L 0,11 L -4,0 Z" fill="#b8735c" />
+                                <text y="-21" text-anchor="middle" font-size="10" font-weight="bold" fill="#4e5f42">N</text>
+                            </g>
+                            <g font-family="'Noto Sans TC', sans-serif" font-weight="bold" paint-order="stroke" stroke="#f7faf4" stroke-width="3.5" stroke-linejoin="round">
+                                <text x="46" y="126" fill="#3f4e35" font-size="13">八里區</text>
+                                <text x="100" y="52" fill="#3f4e35" font-size="13">三芝</text>
+                                <text x="160" y="100" fill="#3f4e35" font-size="13">陽明山區</text>
+                                <text x="220" y="42" fill="#3f4e35" font-size="13">金山</text>
+                                <text x="292" y="66" fill="#3f4e35" font-size="13">基隆港</text>
+                                <text x="203" y="178" fill="#3f4e35" font-size="13">富德/木柵</text>
+                                <text x="130" y="153" fill="#3c7125" font-size="15" letter-spacing="1">台北盆地</text>
+                                <text x="55" y="170" fill="#5c7d94" font-size="10" font-style="italic" transform="rotate(-38 55 170)">淡水河</text>
+                            </g>
+                        </svg>
+                        <div id="memorial-map-points"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-sage-700 mb-1">安放地點/墓園納骨塔位置 *</label>
+                    <input type="text" id="new-mem-location" class="w-full bg-sage-50 border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 font-bold" placeholder="請直接點選上方地圖金色光點" readonly required />
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-sage-700 mb-1">詳細櫃位/備註描述</label>
+                    <textarea id="new-mem-desc" rows="2" placeholder="如：3樓東側12排52號。可備註此位置細節，方便代辦專員祭拜。" class="w-full bg-white border border-hipster-border rounded-lg p-2.5 text-xs text-sage-800 focus:outline-none focus:border-sage-400"></textarea>
+                </div>
+            </div>
+
+            <div class="flex space-x-3 pt-2">
+                <button onclick="toggleAddMemorialModal(false)" class="flex-1 py-2 bg-sage-50 border border-hipster-border text-gray-500 rounded-lg text-xs font-bold transition hover:text-sage-800">
+                    取消
+                </button>
+                <button onclick="saveNewMemorial()" class="flex-1 py-2 bg-sage-600 hover:bg-sage-700 text-white rounded-lg text-xs font-bold transition">
+                    確認登記
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出窗 2：詳細影音回報詳情 -->
+    <div id="report-detail-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-hipster-card border border-hipster-border rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar">
+            <div class="flex items-center justify-between border-b border-hipster-border pb-3">
+                <div>
+                    <span id="detail-modal-date" class="text-[10px] text-gray-400 font-mono font-bold">2026-04-04</span>
+                    <h3 id="detail-modal-service" class="font-bold text-sage-800 text-sm tracking-wide">節日/清明重陽實體代祭拜</h3>
+                </div>
+                <button onclick="closeReportDetail()" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-sage-50 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="bg-sage-50 p-3.5 rounded-xl border border-sage-100 text-xs space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 font-medium">代拜先人:</span>
+                    <span id="detail-modal-deceased" class="font-bold text-sage-800">先慈 〇媽 夫人</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 font-medium">代辦稟言:</span>
+                    <span id="detail-modal-pray" class="text-gray-600 text-right max-w-[70%] line-clamp-2">保佑全家身體安康...</span>
+                </div>
+                <div id="detail-modal-addons-row" class="flex justify-between">
+                    <span class="text-gray-500 font-medium">加購祭品:</span>
+                    <span id="detail-modal-addons" class="text-hipster-accent font-bold text-right">時令鮮果盤 x1</span>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <span class="text-[10px] font-bold text-sage-800 flex items-center space-x-1">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-sage-500"></i>
+                    <span>📝 專員現場實錄回執：</span>
+                </span>
+                <p id="detail-modal-text" class="text-xs text-gray-600 leading-relaxed font-light bg-sage-50/30 p-3 rounded-lg border border-hipster-border/50">
+                    代辦專員已於今日抵達並虔誠履行儀式。
+                </p>
+            </div>
+
+            <div id="detail-modal-video-wrapper" class="relative rounded-xl overflow-hidden border border-hipster-border h-40 bg-cover bg-center shadow-xs cursor-pointer group">
+                <!-- 動態注入影片啟動塊 -->
+            </div>
+
+            <div id="detail-modal-steps-container" class="space-y-2 pt-2 border-t border-hipster-border">
+                <span class="text-[10px] font-bold text-sage-800 flex items-center space-x-1">
+                    <i data-lucide="camera" class="w-3.5 h-3.5 text-sage-500"></i>
+                    <span>📸 實地五大步驟檢核照：</span>
+                </span>
+                <div id="detail-modal-steps-grid" class="grid grid-cols-5 gap-1.5">
+                    <!-- 動態渲染檢核照 -->
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[9px] text-gray-400 pt-2 border-t border-hipster-border">
+                <span class="flex items-center space-x-1 text-emerald-600 font-bold">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                    <span>特約安全實地影像認證</span>
+                </span>
+                <span id="detail-modal-id" class="font-mono">合約編號: BK-10029</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出窗 3：實況影音播放器 -->
+    <div id="video-player-modal" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-sage-950 border border-sage-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+            <button onclick="closeVideoPlayer()" class="absolute top-3 right-3 z-50 bg-black/50 text-white/80 hover:text-white p-1.5 rounded-full transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <div class="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden">
+                <div id="video-bg-frame" class="absolute inset-0 bg-cover bg-center transition-all duration-700 brightness-75 scale-102" style="background-image: url('https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop');"></div>
+                
+                <div class="absolute inset-x-0 top-0 p-3 bg-gradient-to-b from-black/70 to-transparent text-[9px] text-emerald-400 font-mono space-y-0.5 pointer-events-none tracking-wide">
+                    <div class="flex justify-between">
+                        <span>● GPS: 25.1384° N, 121.4647° E</span>
+                        <span class="animate-pulse flex items-center space-x-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            <span class="text-white">實地核驗錄製</span>
+                        </span>
+                    </div>
+                    <div>安全核驗碼：DS-80299P (防篡改防偽)</div>
+                    <div>指定先人：<span id="video-overlay-target" class="text-sage-200 font-bold">先慈 〇媽 夫人</span></div>
+                </div>
+
+                <button id="video-center-play" onclick="togglePlaySimulation()" class="relative z-30 w-14 h-14 bg-white/90 text-sage-800 hover:bg-white rounded-full flex items-center justify-center shadow-md transition transform hover:scale-105 active:scale-95">
+                    <i id="video-center-icon" data-lucide="play" class="w-6 h-6 fill-sage-800 translate-x-0.5"></i>
+                </button>
+            </div>
+
+            <div class="bg-sage-900 p-4 space-y-3">
+                <div class="flex items-center justify-between text-xs text-white/80">
+                    <span id="video-status-text" class="font-bold text-gray-300">暫停中</span>
+                    <span id="video-timer" class="font-mono text-[11px]">00:00 / 01:24</span>
+                </div>
+
+                <div class="relative w-full h-1 bg-sage-800 rounded-full overflow-hidden cursor-pointer" onclick="seekVideoSimulation(event)">
+                    <div id="video-progress-bar" class="absolute h-full left-0 top-0 bg-sage-400 transition-all duration-300 w-0"></div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <div class="flex items-center space-x-4">
+                        <button onclick="togglePlaySimulation()" class="text-sage-200 hover:text-white transition">
+                            <i id="video-control-play-icon" data-lucide="play" class="w-4.5 h-4.5 fill-current"></i>
+                        </button>
+                        <span class="text-white/60 text-[9px] font-mono bg-sage-800 px-2 py-0.5 rounded">
+                            實時高流暢 HD 1080P
+                        </span>
+                    </div>
+                    <div class="text-[9px] text-sage-300 font-bold flex items-center space-x-1">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                        <span>特約代拜安全區塊鏈認證</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈出窗 4：禪意籤結果 -->
+    <div id="fortune-modal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 hidden">
+        <div class="bg-hipster-card border-2 border-sage-300 rounded-2xl w-full max-w-sm p-6 text-center space-y-4 relative shadow-lg">
+            <div class="absolute top-2 right-2">
+                <button onclick="closeFortuneModal()" class="text-sage-500 hover:text-sage-800 p-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <span class="bg-sage-600 text-white text-xs px-3 py-1 rounded-full font-serif font-bold animate-pulse" id="fortune-level">上上大吉</span>
+            
+            <div class="py-4 font-serif text-sage-800 text-base tracking-widest writing-mode-vertical mx-auto h-28 flex items-center justify-center border-l border-r border-sage-200 max-w-[120px]">
+                <span id="fortune-poem" class="[writing-mode:vertical-lr] text-center font-bold leading-relaxed">
+                    一輪明月照乾坤<br>百事亨通萬象新
+                </span>
+            </div>
+
+            <div class="bg-sage-50 p-3 rounded-lg border border-sage-200 text-left">
+                <div class="text-[10px] text-sage-700 font-bold mb-1">【今日平安指引】</div>
+                <p id="fortune-guide" class="text-xs text-sage-800 leading-relaxed font-light">
+                    心懷感恩，行孝不懈。妥善照護身邊家眷，寄託思念予過往先輩，福報自然常在。
+                </p>
+            </div>
+
+            <button onclick="closeFortuneModal()" class="w-full py-2 bg-sage-600 hover:bg-sage-700 text-white font-bold rounded-lg text-xs transition shadow-xs">
+                感恩領受
+            </button>
+        </div>
+    </div>
+
+    <!-- 彈出窗 5：信箱 / 手機二維安全驗證碼輸入 -->
+    <div id="verification-modal" class="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4 hidden">
+        <div class="bg-hipster-card border border-hipster-border rounded-xl w-full max-w-sm p-5 space-y-4 shadow-xl">
+            <div class="flex items-center justify-between border-b border-hipster-border pb-2">
+                <h3 id="verify-modal-title" class="font-bold text-sage-800 text-sm">輸入安全驗證碼</h3>
+                <button onclick="toggleVerificationModal(false)" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3">
+                <p id="verify-modal-desc" class="text-xs text-gray-500 leading-relaxed font-light">已將 6 位數安全防偽驗證碼發送至您設定的設備，請於下方輸入以完成安全比對。</p>
+                <div>
+                    <input type="text" id="verify-code-input" maxlength="6" placeholder="請輸入 6 位數驗證碼" class="w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-center text-lg font-mono font-bold tracking-widest text-sage-800 focus:outline-none focus:border-sage-400" required />
+                </div>
+                <div class="text-[11px] text-amber-600 text-center bg-amber-50 rounded p-1.5 border border-amber-100">
+                    💡 本平台模擬提示：安全驗證碼為 <span id="verify-modal-code" class="font-bold font-mono">123456</span>
+                </div>
+            </div>
+
+            <div class="flex space-x-3 pt-2">
+                <button onclick="toggleVerificationModal(false)" class="flex-1 py-2 bg-sage-50 border border-hipster-border text-gray-500 rounded-lg text-xs font-bold transition hover:text-sage-800">
+                    取消
+                </button>
+                <button onclick="confirmVerificationCode()" class="flex-1 py-2 bg-sage-600 hover:bg-sage-700 text-white rounded-lg text-xs font-bold transition">
+                    確認驗證
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框 -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-sage-800 border border-sage-600 text-white px-4 py-2.5 rounded-full text-xs shadow-lg transition duration-300 transform translate-y-12 opacity-0 pointer-events-none z-[100] flex items-center space-x-2">
+        <i data-lucide="info" class="w-4 h-4 text-sage-200"></i>
+        <span id="toast-message" class="font-bold">操作成功</span>
+    </div>
+
+    <script>
+        // --- 方案 1: 本地 API 後端接口設定 ---
+        const API_BASE = 'http://localhost:3000';
+
+        let useSimulation = true; // 預設啟用完全本地模擬，避免預覽卡死
+        let isLoggedIn = false;
+        let currentUser = null;
+        let redirectTargetTab = null; 
+
+        let currentTab = 'home';
+        
+        // 智能後端探測：若連不上本地 3000 埠，無縫切換至本地擬真模擬資料庫
+        async function checkBackendConnection() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 800); // 800毫秒快速探測
+                const res = await fetch(`${API_BASE}/api/user/profile`, { 
+                    method: 'GET',
+                    signal: controller.signal 
+                });
+                clearTimeout(timeoutId);
+                useSimulation = false;
+                console.log("🌸 偵測到真實後端伺服器運行中，啟用「後端對接資料庫模式」！");
+            } catch (e) {
+                useSimulation = true;
+                console.log("💡 未偵測到本地 server.js，已自動啟用「免安裝本地擬真瀏覽器模擬模式」！");
+            }
+            initSimulationDB();
+        }
+
+        // 初始化本地模擬資料庫 (預置預設測試數據，讓一鍵登入完美運作)
+        function initSimulationDB() {
+            if (!localStorage.getItem('sim_users')) {
+                localStorage.setItem('sim_users', JSON.stringify([
+                    { email: 'demo@parental-love.com', password: '123', name: '陳孝親 居士', phone: '0912345678', nickname: '孝親居士' }
+                ]));
+            }
+            if (!localStorage.getItem('sim_ancestors')) {
+                localStorage.setItem('sim_ancestors', JSON.stringify([
+                    { id: '1', name: '先嚴 〇公 府君', birth: '民國 20 年', death: '民國 111 年', location: '臺北市立富德靈骨樓', desc: '安放地：臺北市立富德靈骨樓 3 樓甲區 12 排。音容宛在，恩澤永存。' },
+                    { id: '2', name: '先慈 〇媽 夫人', birth: '民國 25 年', death: '民國 113 年', location: '新北市八里區慈恩納骨塔', desc: '安放地：新北市八里區慈恩納骨塔 2 樓。淑德溫良，永誌難忘。' }
+                ]));
+            }
+            if (!localStorage.getItem('sim_bookings')) {
+                localStorage.setItem('sim_bookings', JSON.stringify([
+                    {
+                        id: 'BK-10029',
+                        userId: 'demo-user',
+                        service: '節日 - 清明',
+                        targetDeceased: '先慈 〇媽 夫人',
+                        targetDeceasedRaw: '先慈 〇媽 夫人',
+                        targetBeneficiariesRaw: ['孝男 〇條'],
+                        target: '歿者: 先慈 〇媽 夫人 | 報恩人: 孝男 〇〇',
+                        date: '2026-04-04',
+                        status: '已圓滿',
+                        pray: '保佑全家身體安康，後輩事業順利。',
+                        addons: '時令鮮果盤 x 1, 莊嚴香花花束 x 2',
+                        addonsRaw: { fruit: 1, meat: 0, flower: 2, joss: 0, festival: 0 },
+                        feedbackImg: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop',
+                        feedbackText: '代辦專員已於 2026-04-04 前往【新北市八里區慈恩納骨塔】。完成碑位落葉擦拭、上香並擺放加購之【時令鮮果盤 x1、莊嚴香花花束 x2】。現場朗讀宣讀疏文，儀式順利，功德圓滿。',
+                        mediaSteps: [
+                            { name: '1. 環境擦拭', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=200&auto=format&fit=crop', status: '完成環境擦拭與雜物整理' },
+                            { name: '2. 供品陳設', img: 'https://images.unsplash.com/photo-1508193638397-1c4234db14d8?q=80&w=200&auto=format&fit=crop', status: '依約置置辦時令鮮果盤與清香花束' },
+                            { name: '3. 燃香秉報', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop', status: '代辦員虔誠燃心香三炷' },
+                            { name: '4. 宣讀稟言', img: 'https://images.unsplash.com/photo-1506485338023-6ce5f36692df?q=80&w=200&auto=format&fit=crop', status: '宣讀心願稟言：保佑全家身體安康' },
+                            { name: '5. 現場奉化', img: 'https://images.unsplash.com/photo-1464694306111-5cddee3548d4?q=80&w=200&auto=format&fit=crop', status: '奉化極樂金銀財寶箱，迴向極樂' }
+                        ]
+                    }
+                ]));
+            }
+        }
+
+        let addonQuantities = {
+            fruit: 0,
+            meat: 0,
+            flower: 0,
+            joss: 0,
+            festival: 0
+        };
+        
+        const addonDetails = {
+            fruit: { name: '時令鮮果盤', label: '時令鮮果盤 (小份)', price: 300, unit: '份', desc: '當季新鮮三樣水果，敬獻心意' },
+            meat: { name: '莊嚴素三牲禮', label: '莊嚴素三牲禮 (精緻蒟蒻與糕點製)', price: 1200, unit: '份', desc: '遵循清淨茹素傳統，誠敬備辦不殺生' },
+            flower: { name: '莊嚴香花花束', label: '莊嚴香花花束', price: 250, unit: '份', desc: '清雅香花一對，裝飾碑位櫃位' },
+            joss: { name: '極樂金銀財寶箱', label: '極樂金銀財寶箱 (金紙)', price: 500, unit: '箱', desc: '含大箔、壽金等，現場虔心焚化' }
+        };
+
+        function renderAddonCards() {
+            const container = document.getElementById('addon-cards-standard');
+            if (!container) return;
+            container.innerHTML = Object.keys(addonDetails).map(key => {
+                const item = addonDetails[key];
+                return `
+                    <div id="addon-card-${key}" class="flex items-center justify-between bg-white p-3 rounded-lg border border-hipster-border transition-all shadow-2xs">
+                        <div class="flex-grow pr-4">
+                            <div class="text-xs font-bold text-sage-800">${item.label}</div>
+                            <div class="text-[9px] text-gray-500">${item.desc}</div>
+                            <div class="text-[11px] font-bold text-hipster-accent mt-1">NT$ ${item.price} / ${item.unit}</div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" onclick="adjustAddonQty('${key}', -1)" class="w-6 h-6 rounded-full bg-sage-50 text-sage-700 hover:bg-sage-100 flex items-center justify-center font-bold text-xs transition active:scale-90 border border-sage-200">-</button>
+                            <span id="addon-qty-${key}" class="w-6 text-center text-xs font-bold text-sage-800">0</span>
+                            <button type="button" onclick="adjustAddonQty('${key}', 1)" class="w-6 h-6 rounded-full bg-sage-50 text-sage-700 hover:bg-sage-100 flex items-center justify-center font-bold text-xs transition active:scale-90 border border-sage-200">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const festivalAddonPool = {
+            '除夕': { name: '年糕發糕雙輝盤', price: 200, desc: '歲末守歲除舊歲，步步高升好彩頭' },
+            '元宵': { name: '莊嚴御守五彩湯圓', price: 150, desc: '正月十五元宵夜，闔家安康大團圓' },
+            '清明': { name: '傳承草仔粿紅龜粿對盤', price: 180, desc: '清明思親慎終追遠，經典古法敬上' },
+            '端午': { name: '經典清香素粽雙獻盤', price: 200, desc: '端陽安康祛病避邪，清香艾葉古早風味' },
+            '中元 (中原)': { name: '慈悲普渡珍寶福禮盒', price: 350, desc: '中元超薦慈悲普度，廣結善緣功德無量' },
+            '中秋': { name: '莊嚴流心月餅對餅禮敬', price: 220, desc: '中秋團圓明月千里，寄託思念倍思親' },
+            '重陽': { name: '九九重陽登高祈福糕', price: 180, desc: '九九重陽登高祈福，健康長壽平安如意' },
+            '冬至': { name: '暖心紅豆大湯圓', price: 150, desc: '冬至陽生春又來，一碗湯圓暖心田' }
+        };
+
+        if (typeof I18n !== 'undefined') {
+            I18n.setMessages('chs', { 'm.twelve': '臘' });
+        }
+
+        function lunarSolarDate(lunarYear, lunarMonth, lunarDay) {
+            const solar = Lunar.fromYmd(lunarYear, lunarMonth, lunarDay).getSolar();
+            return new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay());
+        }
+        function findJieQiDate(jieQiName, rangeStart, rangeEnd) {
+            const d = new Date(rangeStart);
+            while (d <= rangeEnd) {
+                const lunar = Solar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()).getLunar();
+                if (lunar.getJieQi() === jieQiName) return new Date(d);
+                d.setDate(d.getDate() + 1);
+            }
+            return null;
+        }
+        function computeFestivalSolarDate(festivalKey, year) {
+            switch (festivalKey) {
+                case '除夕': {
+                    const newYearDay = lunarSolarDate(year, 1, 1);
+                    const eve = new Date(newYearDay);
+                    eve.setDate(eve.getDate() - 1);
+                    return eve;
+                }
+                case '元宵': return lunarSolarDate(year, 1, 15);
+                case '端午': return lunarSolarDate(year, 5, 5);
+                case '中元 (中原)': return lunarSolarDate(year, 7, 15);
+                case '中秋': return lunarSolarDate(year, 8, 15);
+                case '重陽': return lunarSolarDate(year, 9, 9);
+                case '清明': return findJieQiDate('清明', new Date(year, 2, 25), new Date(year, 3, 20));
+                case '冬至': return findJieQiDate('冬至', new Date(year, 11, 15), new Date(year, 11, 25));
+                default: return null;
+            }
+        }
+        const _festivalDateCache = {};
+        function getFestivalSolarDate(festivalKey, year) {
+            const cacheKey = festivalKey + '|' + year;
+            if (cacheKey in _festivalDateCache) return _festivalDateCache[cacheKey];
+            let result = null;
+            if (typeof Lunar !== 'undefined' && typeof Solar !== 'undefined') {
+                try { result = computeFestivalSolarDate(festivalKey, year); } catch (e) { result = null; }
+            }
+            _festivalDateCache[cacheKey] = result;
+            return result;
+        }
+        function getLunarDayLabel(dateStr) {
+            if (typeof Solar === 'undefined') return '';
+            try {
+                const d = parseISODate(dateStr);
+                const lunar = Solar.fromYmd(d.getFullYear(), d.getMonth() + 1, d.getDate()).getLunar();
+                if (lunar.getDay() === 1) {
+                    return (lunar.getMonth() < 0 ? '閏' : '') + lunar.getMonthInChinese() + '月';
+                }
+                return lunar.getDayInChinese();
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // --- 虛擬日曆狀態與工具函式 ---
+        let calendarViewDate = new Date();
+        let calendarSelectedDateStr = '';
+
+        const CALENDAR_MIN_YEAR = 2025;
+        const CALENDAR_MAX_YEAR = 2028;
+        const CALENDAR_MIN_MONTH = new Date(CALENDAR_MIN_YEAR, 0, 1);
+        const CALENDAR_MAX_MONTH = new Date(CALENDAR_MAX_YEAR, 11, 1);
+        function clampCalendarViewDate(d) {
+            if (d < CALENDAR_MIN_MONTH) return new Date(CALENDAR_MIN_MONTH);
+            if (d > CALENDAR_MAX_MONTH) return new Date(CALENDAR_MAX_MONTH);
+            return d;
+        }
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function toISODate(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+        function parseISODate(s) {
+            const [y, m, d] = s.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+        function getMinAllowedDate() {
+            const d = new Date();
+            d.setDate(d.getDate() + 7);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+        function getMinAllowedDateStr() {
+            return toISODate(getMinAllowedDate());
+        }
+        function getMondayOfWeek(d) {
+            const date = new Date(d);
+            const day = date.getDay(); 
+            const diff = (day === 0 ? -6 : 1 - day);
+            date.setDate(date.getDate() + diff);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+        function getFestivalWindow(festivalKey, year) {
+            const fDate = getFestivalSolarDate(festivalKey, year);
+            if (!fDate) return null;
+            const monday = getMondayOfWeek(fDate);
+            const start = new Date(monday);
+            start.setDate(start.getDate() - 7);
+            const end = new Date(monday);
+            end.setDate(end.getDate() + 13);
+            end.setHours(23, 59, 59, 999);
+            return { start, end, festivalDate: fDate };
+        }
+        function getFestivalTagForDate(dateStr) {
+            const year = parseISODate(dateStr).getFullYear();
+            for (const y of [year - 1, year, year + 1]) {
+                for (const key in festivalAddonPool) {
+                    const fDate = getFestivalSolarDate(key, y);
+                    if (fDate && toISODate(fDate) === dateStr) return key;
+                }
+            }
+            return null;
+        }
+
+        function updateDateDisplay(dateStr) {
+            const displayEl = document.getElementById('booking-date-display');
+            if (!displayEl) return;
+            if (!dateStr) {
+                displayEl.textContent = '請選擇日期';
+                displayEl.classList.add('text-gray-400');
+                return;
+            }
+            const d = parseISODate(dateStr);
+            const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+            const festivalTag = getFestivalTagForDate(dateStr);
+            let text = `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 (週${weekdayNames[d.getDay()]})`;
+            if (festivalTag) text += ` · ${festivalTag}`;
+            displayEl.textContent = text;
+            displayEl.classList.remove('text-gray-400');
+        }
+
+        function openDatePicker(event) {
+            if (event) event.stopPropagation();
+            const popup = document.getElementById('date-picker-popup');
+            if (!popup) return;
+            const current = document.getElementById('booking-date').value;
+            const initialDate = current ? parseISODate(current) : calendarViewDate;
+            calendarViewDate = clampCalendarViewDate(initialDate);
+            renderCalendar();
+            popup.classList.remove('hidden');
+        }
+
+        function closeDatePicker() {
+            const popup = document.getElementById('date-picker-popup');
+            if (popup) popup.classList.add('hidden');
+            const ymPicker = document.getElementById('calendar-ym-picker');
+            if (ymPicker) ymPicker.classList.add('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const ymPicker = document.getElementById('calendar-ym-picker');
+            const monthLabel = document.getElementById('calendar-month-label');
+            if (ymPicker && !ymPicker.classList.contains('hidden')) {
+                if (!ymPicker.contains(e.target) && (!monthLabel || !monthLabel.contains(e.target))) {
+                    ymPicker.classList.add('hidden');
+                }
+            }
+
+            const popup = document.getElementById('date-picker-popup');
+            const field = document.getElementById('booking-date-field');
+            if (!popup || popup.classList.contains('hidden')) return;
+            if (!popup.contains(e.target) && (!field || !field.contains(e.target))) {
+                closeDatePicker();
+            }
+        });
+
+        function changeCalendarMonth(delta) {
+            const next = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + delta, 1);
+            calendarViewDate = clampCalendarViewDate(next);
+            renderCalendar();
+        }
+
+        let _calendarWheelLock = false;
+        function handleCalendarWheel(event) {
+            event.preventDefault();
+            if (_calendarWheelLock) return;
+            _calendarWheelLock = true;
+            setTimeout(() => { _calendarWheelLock = false; }, 200);
+            changeCalendarMonth(event.deltaY > 0 ? 1 : -1);
+        }
+
+        function toggleCalendarYmPicker(event) {
+            if (event) event.stopPropagation();
+            const picker = document.getElementById('calendar-ym-picker');
+            if (!picker) return;
+            if (picker.classList.contains('hidden')) {
+                populateCalendarYmPicker();
+                picker.classList.remove('hidden');
+            } else {
+                picker.classList.add('hidden');
+            }
+        }
+
+        function populateCalendarYmPicker() {
+            const yearSelect = document.getElementById('calendar-year-select');
+            const monthSelect = document.getElementById('calendar-month-select');
+            if (!yearSelect || !monthSelect) return;
+            const curYear = calendarViewDate.getFullYear();
+            const curMonth = calendarViewDate.getMonth();
+
+            yearSelect.innerHTML = '';
+            for (let y = CALENDAR_MIN_YEAR; y <= CALENDAR_MAX_YEAR; y++) {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = `${y}`;
+                if (y === curYear) opt.selected = true;
+                yearSelect.appendChild(opt);
+            }
+
+            monthSelect.innerHTML = '';
+            for (let m = 0; m < 12; m++) {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = `${m + 1} 月`;
+                if (m === curMonth) opt.selected = true;
+                monthSelect.appendChild(opt);
+            }
+        }
+
+        function onCalendarYmPickerChange() {
+            const yearSelect = document.getElementById('calendar-year-select');
+            const monthSelect = document.getElementById('calendar-month-select');
+            if (!yearSelect || !monthSelect) return;
+            calendarViewDate = new Date(parseInt(yearSelect.value, 10), parseInt(monthSelect.value, 10), 1);
+            renderCalendar();
+            const picker = document.getElementById('calendar-ym-picker');
+            if (picker) picker.classList.add('hidden');
+        }
+
+        function renderCalendar() {
+            const label = document.getElementById('calendar-month-label');
+            const grid = document.getElementById('calendar-days-grid');
+            if (!label || !grid) return;
+
+            const year = calendarViewDate.getFullYear();
+            const month = calendarViewDate.getMonth();
+            label.textContent = `${year} 年 ${month + 1} 月`;
+
+            const prevBtn = document.getElementById('calendar-prev-month');
+            const nextBtn = document.getElementById('calendar-next-month');
+            if (prevBtn) prevBtn.classList.toggle('opacity-30', calendarViewDate <= CALENDAR_MIN_MONTH);
+            if (prevBtn) prevBtn.classList.toggle('pointer-events-none', calendarViewDate <= CALENDAR_MIN_MONTH);
+            if (nextBtn) nextBtn.classList.toggle('opacity-30', calendarViewDate >= CALENDAR_MAX_MONTH);
+            if (nextBtn) nextBtn.classList.toggle('pointer-events-none', calendarViewDate >= CALENDAR_MAX_MONTH);
+
+            const firstDay = new Date(year, month, 1);
+            const startOffset = firstDay.getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const minAllowed = getMinAllowedDate();
+
+            grid.innerHTML = '';
+            for (let i = 0; i < startOffset; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cellDate = new Date(year, month, day);
+                cellDate.setHours(0, 0, 0, 0);
+                const dateStr = toISODate(cellDate);
+                const festivalTag = getFestivalTagForDate(dateStr);
+                const lunarLabel = getLunarDayLabel(dateStr);
+                const subLabel = festivalTag ? festivalTag.replace(' (中原)', '') : lunarLabel;
+                const isSelected = dateStr === calendarSelectedDateStr;
+
+                const disabled = cellDate < minAllowed;
+
+                const cell = document.createElement('button');
+                cell.type = 'button';
+
+                let cls = 'relative flex flex-col items-center justify-center h-12 rounded-lg text-sm font-semibold transition ';
+                if (disabled) {
+                    cls += 'text-gray-400 cursor-not-allowed';
+                } else if (isSelected) {
+                    cls += 'bg-sage-600 text-white shadow-xs';
+                } else if (festivalTag) {
+                    cls += 'bg-amber-50/70 text-sage-900 hover:bg-amber-100';
+                } else {
+                    cls += 'text-sage-900 hover:bg-sage-50';
+                }
+                cell.className = cls;
+                let subCls = 'text-amber-800 font-bold';
+                if (isSelected) subCls = 'text-white font-bold';
+                else if (!festivalTag) subCls = disabled ? 'text-gray-400' : 'text-sage-500';
+                cell.innerHTML = `<span>${day}</span>` + (subLabel ? `<span class="text-[10px] leading-none mt-0.5 ${subCls}">${subLabel}</span>` : '');
+
+                if (!disabled) {
+                    cell.onclick = (e) => { e.stopPropagation(); selectCalendarDay(dateStr); };
+                }
+                grid.appendChild(cell);
+            }
+
+            safeCreateIcons();
+        }
+
+        function selectCalendarDay(dateStr) {
+            calendarSelectedDateStr = dateStr;
+            const input = document.getElementById('booking-date');
+            if (input) input.value = dateStr;
+            updateDateDisplay(dateStr);
+            renderCalendar();
+            closeDatePicker();
+            onBookingDateChange(dateStr);
+        }
+
+        function onBookingDateChange(dateStr) {
+            const serviceSelect = document.getElementById('booking-service');
+            const subSelect = document.getElementById('booking-sub-festival');
+            const hintEl = document.getElementById('booking-date-hint');
+            if (!serviceSelect || !subSelect) return;
+
+            const year = parseISODate(dateStr).getFullYear();
+            const matchedOpt = Array.from(subSelect.options).find(opt => {
+                const win = getFestivalWindow(opt.value, year);
+                return !!win && dateStr >= toISODate(win.start) && dateStr <= toISODate(win.end);
+            });
+
+            if (matchedOpt) {
+                const festivalChanged = subSelect.value !== matchedOpt.value;
+                const serviceChanged = serviceSelect.value !== '節日';
+                if (festivalChanged) subSelect.value = matchedOpt.value;
+
+                if (serviceChanged) {
+                    serviceSelect.value = '節日';
+                    onServiceChange(); 
+                    showToast(`已依所選日期自動同步代辦項目為「特定節日代辦」，節日為「${matchedOpt.value}」`);
+                } else if (festivalChanged) {
+                    onSubFestivalChange();
+                    showToast(`已依所選日期自動同步節日為「${matchedOpt.value}」`);
+                }
+            }
+
+            if (hintEl) {
+                if (serviceSelect.value === '節日' && !matchedOpt) {
+                    hintEl.textContent = `此日期未落在任何節日的常見週期內，節日仍維持為「${subSelect.value}」`;
+                    hintEl.classList.remove('hidden');
+                } else {
+                    hintEl.classList.add('hidden');
+                }
+            }
+        }
+
+        function syncCalendarToFestival(festivalKey) {
+            const dateInput = document.getElementById('booking-date');
+            const currentDateStr = dateInput ? dateInput.value : '';
+            const minAllowed = getMinAllowedDate();
+
+            let win = currentDateStr ? getFestivalWindow(festivalKey, parseISODate(currentDateStr).getFullYear()) : null;
+            const currentInWindow = win && currentDateStr >= toISODate(win.start) && currentDateStr <= toISODate(win.end);
+
+            if (!currentInWindow) {
+                const candidateYears = [minAllowed.getFullYear(), minAllowed.getFullYear() + 1, minAllowed.getFullYear() + 2];
+                win = null;
+                for (const y of candidateYears) {
+                    const w = getFestivalWindow(festivalKey, y);
+                    if (w && toISODate(w.end) >= toISODate(minAllowed)) { win = w; break; }
+                }
+
+                if (win) {
+                    const clampStart = toISODate(win.start) < toISODate(minAllowed) ? minAllowed : win.start;
+                    const clampStartStr = toISODate(clampStart);
+                    if (dateInput) dateInput.value = clampStartStr;
+                    calendarSelectedDateStr = clampStartStr;
+                    updateDateDisplay(clampStartStr);
+                    showToast(`已依節日「${festivalKey}」自動同步日期`);
+                }
+            }
+
+            if (win) calendarViewDate = new Date(win.festivalDate);
+            renderCalendar();
+        }
+
+        // --- 與後端串接之動態資料容器 ---
+        let memorials = [];
+        let bookings = [];
+
+        let videoPlaying = false;
+        let videoProgress = 0;
+        let videoInterval;
+
+        let emailVerified = true;
+        let phoneVerified = true;
+        let currentVerificationType = ''; 
+        let simulatedCode = '123456';
+
+        // --- 安全載入 Lucide Icons ---
+        function safeCreateIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
+                } else {
+                    setTimeout(safeCreateIcons, 100);
+                }
+            } catch (err) {
+                setTimeout(safeCreateIcons, 100);
+            }
+        }
+
+        // --- 通用與後端 API 通訊函式 ---
+        async function apiRequest(endpoint, options = {}) {
+            const token = localStorage.getItem('userToken');
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+            if (res.status === 401 || res.status === 403) {
+                handleLogout();
+                throw new Error('認證憑證過期或無效，請重新登入');
+            }
+            return res;
+        }
+
+        window.onload = async function() {
+            safeCreateIcons();
+            renderAddonCards();
+            renderMemorialMapPoints();
+
+            const minDateStr = getMinAllowedDateStr();
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput) {
+                dateInput.value = minDateStr;
+            }
+            calendarSelectedDateStr = minDateStr;
+            calendarViewDate = parseISODate(minDateStr);
+            updateDateDisplay(minDateStr);
+            renderCalendar();
+
+            // 優先執行後端連線探測
+            await checkBackendConnection();
+
+            // 自動登入檢查
+            await checkAutoLogin();
+
+            updateAuthDisplay();
+            calculateTotalCost();
+        };
+
+        // --- 會員認證與登入流程 (Auth System) ---
+        async function checkAutoLogin() {
+            if (useSimulation) {
+                const savedUser = localStorage.getItem('sim_current_user');
+                if (savedUser) {
+                    await loginSuccess("simulated-token", JSON.parse(savedUser));
+                }
+                return;
+            }
+            const token = localStorage.getItem('userToken');
+            if (!token) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/user/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const user = await res.json();
+                    await loginSuccess(token, user);
+                } else {
+                    localStorage.removeItem('userToken');
+                }
+            } catch (e) {
+                console.error("Auto login error:", e);
+            }
+        }
+
+        function updateAuthDisplay() {
+            const loginBtn = document.getElementById('header-btn-login');
+            const userBadge = document.getElementById('header-user-badge');
+            const userNameSpan = document.getElementById('header-user-name');
+
+            if (isLoggedIn && currentUser) {
+                if (loginBtn) loginBtn.classList.add('hidden');
+                if (userBadge) userBadge.classList.remove('hidden');
+                if (userNameSpan) userNameSpan.textContent = currentUser.name;
+            } else {
+                if (loginBtn) loginBtn.classList.remove('hidden');
+                if (userBadge) userBadge.classList.add('hidden');
+            }
+            safeCreateIcons();
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('auth-username').value.trim();
+            const password = document.getElementById('auth-password').value.trim();
+
+            if (useSimulation) {
+                const users = JSON.parse(localStorage.getItem('sim_users') || '[]');
+                const matched = users.find(u => u.email === email && u.password === password);
+                if (matched) {
+                    localStorage.setItem('sim_current_user', JSON.stringify(matched));
+                    await loginSuccess("simulated-token", matched);
+                } else {
+                    showToast('帳號或密碼輸入錯誤 (內置模擬) 💡');
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '登入失敗');
+                await loginSuccess(data.token, data.user);
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        async function quickDemoLogin() {
+            if (useSimulation) {
+                const users = JSON.parse(localStorage.getItem('sim_users') || '[]');
+                let demoUser = users.find(u => u.email === 'demo@parental-love.com');
+                if (!demoUser) {
+                    demoUser = { email: 'demo@parental-love.com', password: '123', name: '陳孝親 居士', phone: '0912345678', nickname: '孝親居士' };
+                }
+                localStorage.setItem('sim_current_user', JSON.stringify(demoUser));
+                await loginSuccess("simulated-token", demoUser);
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'demo@parental-love.com', password: '123' })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '示範帳號登入失敗');
+                await loginSuccess(data.token, data.user);
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        async function loginSuccess(token, userObj) {
+            isLoggedIn = true;
+            localStorage.setItem('userToken', token);
+            currentUser = {
+                email: userObj.email,
+                name: userObj.name,
+                phone: userObj.phone,
+                nickname: userObj.nickname || '',
+                emailVerified: true,
+                phoneVerified: true
+            };
+            emailVerified = true;
+            phoneVerified = true;
+
+            document.getElementById('profile-email').value = currentUser.email;
+            document.getElementById('profile-name').value = currentUser.name;
+            document.getElementById('profile-phone').value = currentUser.phone;
+
+            updateAuthDisplay();
+            showToast(`合十敬迎，${currentUser.name} 登入成功 🙏`);
+
+            // 拉取後端真實資料
+            await loadAncestors();
+            await loadBookings();
+
+            updateVerificationUI();
+
+            if (redirectTargetTab) {
+                const target = redirectTargetTab;
+                redirectTargetTab = null;
+                switchTab(target);
+            } else {
+                switchTab('home');
+            }
+        }
+
+        function handleLogout() {
+            isLoggedIn = false;
+            currentUser = null;
+            localStorage.removeItem('userToken');
+            if (useSimulation) {
+                localStorage.removeItem('sim_current_user');
+            }
+            
+            memorials = [];
+            bookings = [];
+            
+            updateAuthDisplay();
+            showToast('已安全登出會員。願您吉祥安康 🙏');
+            switchTab('home');
+        }
+
+        // --- 切換登入 / 註冊面板 ---
+        function toggleAuthMode(mode) {
+            const loginView = document.getElementById('auth-login-view');
+            const registerView = document.getElementById('auth-register-view');
+            if (!loginView || !registerView) return;
+
+            if (mode === 'register') {
+                loginView.classList.add('hidden');
+                registerView.classList.remove('hidden');
+            } else {
+                registerView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
+            safeCreateIcons();
+        }
+
+        // --- 處理帳號註冊提交 (雙模支援) ---
+        async function handleRegisterSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+
+            if (!email || !password || !name) {
+                showToast('請完整填寫必填欄位');
+                return;
+            }
+
+            if (password.length < 6) {
+                showToast('密碼長度須至少為 6 位數以上');
+                return;
+            }
+
+            if (useSimulation) {
+                // 1. 本地 LocalStorage 模擬資料庫模式
+                const users = JSON.parse(localStorage.getItem('sim_users') || '[]');
+                const isExist = users.some(u => u.email === email);
+                if (isExist) {
+                    showToast('此電子信箱已註冊過帳號 (內置模擬) 💡');
+                    return;
+                }
+
+                const newUser = {
+                    email,
+                    password,
+                    name,
+                    phone: phone || '',
+                    nickname: ''
+                };
+                users.push(newUser);
+                localStorage.setItem('sim_users', JSON.stringify(users));
+
+                showToast('帳號註冊成功！(已儲存至模擬資料庫) 🙏');
+                // 自動帶入登入表單
+                document.getElementById('auth-username').value = email;
+                document.getElementById('auth-password').value = password;
+                
+                // 註冊表單清空
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-phone').value = '';
+
+                toggleAuthMode('login');
+                return;
+            }
+
+            // 2. 真實後端 Express 連動模式
+            try {
+                const res = await fetch(`${API_BASE}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, name, phone })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '註冊失敗');
+
+                showToast('帳號註冊成功！請於下方登入驗證 🙏');
+                
+                // 自動帶入登入表單
+                document.getElementById('auth-username').value = email;
+                document.getElementById('auth-password').value = password;
+
+                // 註冊表單清空
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-phone').value = '';
+
+                toggleAuthMode('login');
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        // --- Tab 導覽功能 ---
+        function switchTab(tabId) {
+            if (tabId !== 'home' && !isLoggedIn) {
+                redirectTargetTab = tabId; 
+                
+                document.querySelectorAll('.page-tab').forEach(el => el.classList.add('hidden'));
+                document.getElementById('auth-gate-container').classList.remove('hidden');
+                
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('text-sage-600');
+                    btn.classList.add('text-gray-400');
+                });
+                const navBtn = document.getElementById(`nav-${tabId}`);
+                if (navBtn) {
+                    navBtn.classList.remove('text-gray-400');
+                    navBtn.classList.add('text-sage-600');
+                }
+                return;
+            }
+
+            document.querySelectorAll('.page-tab').forEach(el => el.classList.add('hidden'));
+            const targetSec = document.getElementById(`tab-${tabId}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-sage-600');
+                btn.classList.add('text-gray-400');
+            });
+            const navBtn = document.getElementById(`nav-${tabId}`);
+            if (navBtn) {
+                navBtn.classList.remove('text-gray-400');
+                navBtn.classList.add('text-sage-600');
+            }
+            
+            currentTab = tabId;
+        }
+
+        function selectVirtualLocation(name, address) {
+            const locInput = document.getElementById('new-mem-location');
+            if (locInput) {
+                locInput.value = `${name} (${address})`;
+            }
+            showToast(`已選定特約墓園：${name}`);
+        }
+
+        const MEMORIAL_MAP_POINTS = [
+            { name: '臺北市立富德靈骨樓', address: '台北市文山區木柵路五段190號', label: '富德靈骨樓', top: 78, left: 51 },
+            { name: '臺北市立陽明山臻愛樓', address: '台北市北投區泉源路220號', label: '陽明山臻愛樓', top: 50, left: 45 },
+            { name: '新北市八里區慈恩納骨塔', address: '新北市八里區龍米路二段129號', label: '八里慈恩納骨塔', top: 66, left: 12 },
+            { name: '三芝白沙灣安樂園真龍殿', address: '新北市三芝區茂長里陳厝坑7號', label: '三芝真龍殿', top: 35, left: 30 },
+            { name: '金山金寶山安樂園', address: '新北市金山區西勢湖18號', label: '金山金寶山', top: 22, left: 58 },
+            { name: '基隆市南榮公墓納骨堂', address: '基隆市仁愛區南榮路509號', label: '基隆南榮納骨堂', top: 35, left: 80 }
+        ];
+
+        function renderMemorialMapPoints() {
+            const container = document.getElementById('memorial-map-points');
+            if (!container) return;
+            container.innerHTML = MEMORIAL_MAP_POINTS.map(p => `
+                <button type="button" onclick="selectVirtualLocation('${p.name}', '${p.address}')" class="absolute group -translate-x-1/2 -translate-y-1/2 z-10 hover:z-30" style="top: ${p.top}%; left: ${p.left}%;">
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-gold-400 rounded-full animate-pulse-subtle"></span>
+                    <span class="relative block w-3 h-3 bg-hipster-accent rounded-full border-2 border-white shadow-md"></span>
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 scale-0 group-hover:scale-100 transition-transform origin-left bg-gold-950 text-white text-[11px] font-bold px-2 py-1 rounded-md shadow-lg whitespace-nowrap z-20">${p.label}</span>
+                </button>
+            `).join('');
+        }
+
+        function selectBookingService(serviceName, baseFee) {
+            switchTab('booking');
+            
+            const serviceSelect = document.getElementById('booking-service');
+            if (serviceSelect) {
+                for (let option of serviceSelect.options) {
+                    if (option.value === serviceName || option.text.includes(serviceName)) {
+                        serviceSelect.value = option.value;
+                        break;
+                    }
+                }
+            }
+            onServiceChange();
+            calculateTotalCost();
+            if (isLoggedIn) {
+                showToast(`已選定代辦項目：${serviceName}`);
+            }
+        }
+
+        // --- 先人名冊管理 (後端串接) ---
+        async function loadAncestors() {
+            if (useSimulation) {
+                memorials = JSON.parse(localStorage.getItem('sim_ancestors') || '[]');
+                renderMemorials();
+                updateBookingDeceasedDropdown();
+                updateReportFilterDropdown();
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/ancestors');
+                if (res.ok) {
+                    memorials = await res.json();
+                    renderMemorials();
+                    updateBookingDeceasedDropdown();
+                    updateReportFilterDropdown();
+                }
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function renderMemorials() {
+            const container = document.getElementById('memorial-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            memorials.forEach(mem => {
+                const card = document.createElement('div');
+                card.className = `bg-hipster-card border border-hipster-border rounded-xl p-4 flex flex-col justify-between space-y-3 relative overflow-hidden shadow-xs`;
+                
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="text-[10px] text-gray-400 font-mono">生卒：${mem.birth} - ${mem.death}</div>
+                        <h4 class="font-bold text-sage-800 text-sm tracking-wide">${mem.name}</h4>
+                        <div class="text-[10px] text-hipster-accent font-bold flex items-center space-x-0.5">
+                            <i data-lucide="map-pin" class="w-3 h-3"></i>
+                            <span class="truncate">${mem.location.split('(')[0]}</span>
+                        </div>
+                        <p class="text-[11px] text-gray-600 line-clamp-2 leading-relaxed mt-1 font-light">${mem.desc}</p>
+                    </div>
+                    <div class="pt-2 border-t border-hipster-border">
+                        <button onclick="orderProxyForMemorial('${mem.id}')" class="w-full py-1.5 bg-sage-600 hover:bg-sage-700 text-white text-[10px] font-bold rounded-lg transition flex items-center justify-center space-x-1 shadow-xs">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                            <span>預約此人代祭拜</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            safeCreateIcons();
+        }
+
+        function updateBookingDeceasedDropdown() {
+            const dropdown = document.getElementById('booking-deceased-select');
+            if (!dropdown) return;
+            dropdown.innerHTML = '<option value="manual">-- 手動輸入代辦資料 --</option>';
+            
+            memorials.forEach(mem => {
+                const opt = document.createElement('option');
+                opt.value = mem.id;
+                opt.textContent = `${mem.name} (位置: ${mem.location.split('(')[0]})`;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        function updateBookingImportDropdown() {
+            const importSelect = document.getElementById('booking-import-select');
+            if (!importSelect) return;
+            importSelect.innerHTML = '<option value="">-- 選擇過往委託直接載入 --</option>';
+            
+            bookings.forEach(bk => {
+                const opt = document.createElement('option');
+                opt.value = bk.id;
+                opt.textContent = `${bk.date} - ${bk.targetDeceased} (${bk.service})`;
+                importSelect.appendChild(opt);
+            });
+        }
+
+        // --- 歷史委託配置導入邏輯 ---
+        function onBookingImportSelectChange(selectElement) {
+            const bkId = selectElement.value;
+            if (!bkId) return;
+
+            const bk = bookings.find(item => item.id === bkId);
+            if (!bk) return;
+
+            const serviceSelect = document.getElementById('booking-service');
+            const subFestivalSelect = document.getElementById('booking-sub-festival');
+            
+            if (bk.service.startsWith('節日')) {
+                serviceSelect.value = '節日';
+                const parts = bk.service.split(' - ');
+                if (parts.length > 1 && subFestivalSelect) {
+                    subFestivalSelect.value = parts[1];
+                }
+            } else {
+                serviceSelect.value = bk.service;
+            }
+            onServiceChange(); 
+
+            const deceasedSelect = document.getElementById('booking-deceased-select');
+            const matchedMemorial = memorials.find(m => m.name === bk.targetDeceasedRaw);
+            if (matchedMemorial && deceasedSelect) {
+                deceasedSelect.value = matchedMemorial.id;
+            } else if (deceasedSelect) {
+                deceasedSelect.value = 'manual';
+            }
+            onBookingDeceasedSelectChange(deceasedSelect);
+            if (deceasedSelect && deceasedSelect.value === 'manual') {
+                const decInput = document.getElementById('booking-deceased');
+                if (decInput) decInput.value = bk.targetDeceasedRaw || '';
+            }
+
+            const beneficiaries = bk.targetBeneficiariesRaw || [];
+            const benContainer = document.getElementById('beneficiary-fields-container');
+            if (benContainer) {
+                benContainer.innerHTML = '';
+                beneficiaries.forEach((name, index) => {
+                    if (index === 0) {
+                        benContainer.innerHTML = `
+                            <div class="flex items-center space-x-2">
+                                <input type="text" class="beneficiary-input w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" value="${name}" placeholder="例如：孝子 〇〇" required />
+                            </div>
+                        `;
+                    } else {
+                        const div = document.createElement('div');
+                        div.className = 'flex items-center space-x-2 mt-2';
+                        div.innerHTML = `
+                            <input type="text" class="beneficiary-input w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" value="${name}" placeholder="例如：孝子 〇〇" required />
+                            <button type="button" onclick="removeBeneficiaryField(this)" class="p-2 text-red-500 hover:text-red-700 transition">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        `;
+                        benContainer.appendChild(div);
+                    }
+                });
+            }
+            safeCreateIcons();
+            
+            const addBenBtn = document.getElementById('btn-add-beneficiary');
+            if (addBenBtn) {
+                if (beneficiaries.length >= 6) {
+                    addBenBtn.classList.add('opacity-50', 'pointer-events-none');
+                } else {
+                    addBenBtn.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            }
+
+            const importedAddons = bk.addonsRaw || { fruit: 0, meat: 0, flower: 0, joss: 0, festival: 0 };
+            for (let key in addonQuantities) {
+                const qty = importedAddons[key] || 0;
+                addonQuantities[key] = qty;
+                const qtySpan = document.getElementById(`addon-qty-${key}`);
+                if (qtySpan) qtySpan.textContent = qty;
+                setAddonCardActive(key, qty > 0);
+            }
+
+            const prayTxt = document.getElementById('booking-pray');
+            if (prayTxt) prayTxt.value = bk.pray || '';
+
+            calculateTotalCost();
+            showToast(`已載入 ${bk.targetDeceasedRaw} 的歷史配置，請設定預定祭拜新日期 📅`);
+            selectElement.value = '';
+        }
+
+        function onBookingDeceasedSelectChange(selectElement) {
+            const deceasedInput = document.getElementById('booking-deceased');
+            if (!deceasedInput) return;
+            const val = selectElement.value;
+
+            if (val === 'manual') {
+                deceasedInput.value = '';
+                deceasedInput.readOnly = false;
+                deceasedInput.classList.remove('bg-gray-50', 'cursor-not-allowed', 'font-bold');
+                deceasedInput.classList.add('bg-white');
+            } else {
+                const selectedMem = memorials.find(m => m.id === val);
+                if (selectedMem) {
+                    deceasedInput.value = selectedMem.name;
+                    deceasedInput.readOnly = true;
+                    deceasedInput.classList.add('bg-gray-50', 'cursor-not-allowed', 'font-bold');
+                    deceasedInput.classList.remove('bg-white');
+                    showToast(`已連動先人位置：${selectedMem.location.split('(')[0]}`);
+                }
+            }
+        }
+
+        function orderProxyForMemorial(memId) {
+            switchTab('booking');
+            const dropdown = document.getElementById('booking-deceased-select');
+            if (dropdown) {
+                dropdown.value = memId;
+                onBookingDeceasedSelectChange(dropdown);
+            }
+        }
+
+        function onServiceChange() {
+            const serviceSelect = document.getElementById('booking-service');
+            if (!serviceSelect) return;
+            const service = serviceSelect.value;
+            const subContainer = document.getElementById('sub-festival-container');
+            const festivalCard = document.getElementById('addon-card-festival');
+
+            if (service === '節日') {
+                if (subContainer) subContainer.classList.remove('hidden');
+                if (festivalCard) festivalCard.classList.remove('hidden');
+                onSubFestivalChange();
+            } else {
+                if (subContainer) subContainer.classList.add('hidden');
+                if (festivalCard) festivalCard.classList.add('hidden');
+                addonQuantities.festival = 0;
+                const festQty = document.getElementById('addon-qty-festival');
+                if (festQty) festQty.textContent = '0';
+
+                const hintEl = document.getElementById('booking-date-hint');
+                if (hintEl) hintEl.classList.add('hidden');
+                renderCalendar();
+
+                calculateTotalCost();
+            }
+        }
+
+        function onSubFestivalChange() {
+            const subSelect = document.getElementById('booking-sub-festival');
+            if (!subSelect) return;
+            const selectedFestival = subSelect.value;
+            const item = festivalAddonPool[selectedFestival] || { name: '節日特色好禮', price: 200, desc: '傳統節慶敬獻禮品' };
+
+            const nameEl = document.getElementById('festival-addon-name');
+            const descEl = document.getElementById('festival-addon-desc');
+            const priceEl = document.getElementById('festival-addon-price');
+
+            if (nameEl) nameEl.textContent = item.name;
+            if (descEl) descEl.textContent = item.desc;
+            if (priceEl) priceEl.textContent = `NT$ ${item.price} / 份`;
+
+            syncCalendarToFestival(selectedFestival);
+            calculateTotalCost();
+        }
+
+        function toggleAddMemorialModal(show) {
+            const modal = document.getElementById('add-memorial-modal');
+            if (modal) modal.classList.toggle('hidden', !show);
+        }
+
+        function addBeneficiaryField() {
+            const container = document.getElementById('beneficiary-fields-container');
+            if (!container) return;
+            const fields = container.getElementsByClassName('beneficiary-input');
+            if (fields.length >= 6) {
+                showToast('最多填寫 6 位陽上報恩人');
+                return;
+            }
+            
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-2 mt-2';
+            div.innerHTML = `
+                <input type="text" class="beneficiary-input w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="例如：孝子 〇〇" required />
+                <button type="button" onclick="removeBeneficiaryField(this)" class="p-2 text-red-500 hover:text-red-700 transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            safeCreateIcons();
+            
+            const addBtn = document.getElementById('btn-add-beneficiary');
+            if (addBtn && container.getElementsByClassName('beneficiary-input').length >= 6) {
+                addBtn.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function removeBeneficiaryField(button) {
+            const container = document.getElementById('beneficiary-fields-container');
+            button.parentElement.remove();
+            
+            const addBtn = document.getElementById('btn-add-beneficiary');
+            if (addBtn && container && container.getElementsByClassName('beneficiary-input').length < 6) {
+                addBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function setAddonCardActive(type, active) {
+            const card = document.getElementById(`addon-card-${type}`);
+            if (!card) return;
+            if (active) {
+                card.className = (type === 'festival')
+                    ? "flex items-center justify-between bg-amber-100 p-3 rounded-lg border border-amber-400 shadow-2xs transition-all"
+                    : "flex items-center justify-between bg-sage-100 p-3 rounded-lg border border-sage-300 shadow-2xs transition-all";
+            } else {
+                card.className = (type === 'festival')
+                    ? "flex items-center justify-between bg-amber-50/50 p-3 rounded-lg border border-amber-300 shadow-2xs transition-all"
+                    : "flex items-center justify-between bg-white p-3 rounded-lg border border-hipster-border transition-all shadow-2xs";
+            }
+        }
+
+        const ADDON_MAX_QTY = { festival: 2 };
+
+        function adjustAddonQty(type, change) {
+            const currentQty = addonQuantities[type];
+            const newQty = Math.max(0, currentQty + change);
+            const maxQty = ADDON_MAX_QTY[type] || 99;
+
+            if (newQty > maxQty) {
+                showToast(type === 'festival' ? '節日限定祭品每筆最多限購 2 份' : `單項加購數量上限為 ${maxQty} 份`);
+                return;
+            }
+
+            addonQuantities[type] = newQty;
+            const qtySpan = document.getElementById(`addon-qty-${type}`);
+            if (qtySpan) qtySpan.textContent = newQty;
+            setAddonCardActive(type, newQty > 0);
+
+            calculateTotalCost();
+        }
+
+        function calculateTotalCost() {
+            const serviceSelect = document.getElementById('booking-service');
+            if (!serviceSelect) return;
+            const service = serviceSelect.value;
+            
+            let baseFee = 1200; 
+            if (service === '週年忌日') baseFee = 1500;
+            else if (service === '節日') baseFee = 1800;
+
+            let addonsFee = 0;
+            for (let key in addonQuantities) {
+                if (key === 'festival') {
+                    if (service === '節日') {
+                        const subSelect = document.getElementById('booking-sub-festival');
+                        const currentFest = subSelect ? subSelect.value : '除夕';
+                        const price = festivalAddonPool[currentFest] ? festivalAddonPool[currentFest].price : 200;
+                        addonsFee += price * addonQuantities.festival;
+                    }
+                } else {
+                    addonsFee += addonDetails[key].price * addonQuantities[key];
+                }
+            }
+
+            const total = baseFee + addonsFee;
+
+            const feeEl = document.getElementById('booking-fee');
+            const addOnFeeEl = document.getElementById('booking-addons-fee');
+            const totalEl = document.getElementById('booking-total');
+
+            if (feeEl) feeEl.textContent = `NT$ ${baseFee.toLocaleString()}`;
+            if (addOnFeeEl) addOnFeeEl.textContent = `NT$ ${addonsFee.toLocaleString()}`;
+            if (totalEl) totalEl.textContent = `NT$ ${total.toLocaleString()}`;
+        }
+
+        // --- 送出預約至後端系統 (串接 API) ---
+        async function handleBookingSubmit(event) {
+            event.preventDefault();
+
+            const serviceVal = document.getElementById('booking-service').value;
+            let service = serviceVal;
+            let currentFestival = '';
+            if (serviceVal === '節日') {
+                const subFestivalSelect = document.getElementById('booking-sub-festival');
+                currentFestival = subFestivalSelect ? subFestivalSelect.value : '除夕';
+                service = `節日 - ${currentFestival}`;
+            }
+            const deceasedName = document.getElementById('booking-deceased').value.trim();
+            
+            const beneficiaryFields = document.querySelectorAll('.beneficiary-input');
+            const beneficiaryNames = Array.from(beneficiaryFields).map(f => f.value.trim()).filter(val => val !== '');
+
+            const date = document.getElementById('booking-date').value;
+            const pray = document.getElementById('booking-pray').value.trim();
+
+            const selectedAddons = [];
+            const savedAddonsRaw = {};
+            for (let key in addonQuantities) {
+                savedAddonsRaw[key] = addonQuantities[key];
+                if (addonQuantities[key] > 0) {
+                    if (key === 'festival' && serviceVal === '節日') {
+                        const festItem = festivalAddonPool[currentFestival] || { name: '節日限定禮物' };
+                        selectedAddons.push(`${festItem.name} x ${addonQuantities.festival}`);
+                    } else if (key !== 'festival') {
+                        selectedAddons.push(`${addonDetails[key].name} x ${addonQuantities[key]}`);
+                    }
+                }
+            }
+
+            if (!deceasedName || beneficiaryNames.length === 0 || !date) {
+                showToast('請完整填寫必填欄位');
+                return;
+            }
+
+            const selectedDate = new Date(date);
+            selectedDate.setHours(0, 0, 0, 0);
+
+            if (selectedDate < getMinAllowedDate()) {
+                showToast('實體準備耗時，預訂祭拜日期須至少於 7 天後');
+                return;
+            }
+
+            const targetText = `歿者: ${deceasedName}`;
+            const relationText = `報恩人: ${beneficiaryNames.join(', ')}`;
+
+            const orderData = {
+                service,
+                targetDeceased: deceasedName,
+                targetDeceasedRaw: deceasedName,
+                targetBeneficiariesRaw: [...beneficiaryNames],
+                target: `${targetText} | ${relationText}`,
+                date,
+                pray: pray || '闔家平安，慎終追遠。',
+                addons: selectedAddons.length > 0 ? selectedAddons.join(', ') : '',
+                addonsRaw: savedAddonsRaw
+            };
+
+            if (useSimulation) {
+                const newOrder = {
+                    id: `BK-${Math.floor(10000 + Math.random() * 90000)}`,
+                    service,
+                    targetDeceased: deceasedName,
+                    targetDeceasedRaw: deceasedName,
+                    targetBeneficiariesRaw: [...beneficiaryNames],
+                    target: `${targetText} | ${relationText}`,
+                    date,
+                    status: '安排中',
+                    pray: pray || '闔家平安，慎終追遠。',
+                    addons: selectedAddons.length > 0 ? selectedAddons.join(', ') : '',
+                    addonsRaw: savedAddonsRaw,
+                    feedbackImg: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop',
+                    feedbackText: '系統已成功排程 (模擬)。現場代辦專員將在執行日當天攜帶精緻加購供品敬祀，並上傳實況錄影與五大步驟檢核照。',
+                    mediaSteps: [
+                        { name: '1. 環境擦拭', img: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=200&auto=format&fit=crop', status: '待執行' },
+                        { name: '2. 供品陳設', img: 'https://images.unsplash.com/photo-1508193638397-1c4234db14d8?q=80&w=200&auto=format&fit=crop', status: '待執行' },
+                        { name: '3. 燃香秉報', img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&auto=format&fit=crop', status: '待執行' },
+                        { name: '4. 宣讀稟言', img: 'https://images.unsplash.com/photo-1506485338023-6ce5f36692df?q=80&w=200&auto=format&fit=crop', status: '待執行' },
+                        { name: '5. 現場奉化', img: 'https://images.unsplash.com/photo-1464694306111-5cddee3548d4?q=80&w=200&auto=format&fit=crop', status: '待執行' }
+                    ]
+                };
+                const list = JSON.parse(localStorage.getItem('sim_bookings') || '[]');
+                list.unshift(newOrder);
+                localStorage.setItem('sim_bookings', JSON.stringify(list));
+
+                showToast('委託預約成功！(模擬已持久化儲存) 🎉');
+                await loadBookings();
+                resetBookingForm();
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(orderData)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '預約失敗');
+                
+                showToast('委託預約成功！可切換至「影音回報」分頁查看進度');
+                await loadBookings();
+                resetBookingForm();
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function resetBookingForm() {
+            const dropdown = document.getElementById('booking-deceased-select');
+            if (dropdown) {
+                dropdown.value = 'manual';
+                onBookingDeceasedSelectChange(dropdown);
+            }
+
+            const serviceSelect = document.getElementById('booking-service');
+            if (serviceSelect) {
+                serviceSelect.value = '一般祭拜';
+                onServiceChange();
+            }
+
+            const beneficiaryContainer = document.getElementById('beneficiary-fields-container');
+            if (beneficiaryContainer) {
+                beneficiaryContainer.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="text" class="beneficiary-input w-full bg-white border border-hipster-border rounded-lg px-3 py-2 text-xs text-sage-800 focus:outline-none focus:border-sage-400" placeholder="例如：孝子 〇〇" required />
+                    </div>
+                `;
+            }
+            const addBenBtn = document.getElementById('btn-add-beneficiary');
+            if (addBenBtn) addBenBtn.classList.remove('opacity-50', 'pointer-events-none');
+            
+            const prayTxt = document.getElementById('booking-pray');
+            if (prayTxt) prayTxt.value = '';
+
+            for (let key in addonQuantities) {
+                addonQuantities[key] = 0;
+                const qtySpan = document.getElementById(`addon-qty-${key}`);
+                if (qtySpan) qtySpan.textContent = '0';
+                setAddonCardActive(key, false);
+            }
+            
+            const dateInput = document.getElementById('booking-date');
+            const resetDateStr = getMinAllowedDateStr();
+            if (dateInput) dateInput.value = resetDateStr;
+
+            calendarSelectedDateStr = resetDateStr;
+            calendarViewDate = parseISODate(resetDateStr);
+            updateDateDisplay(resetDateStr);
+            const hintElReset = document.getElementById('booking-date-hint');
+            if (hintElReset) hintElReset.classList.add('hidden');
+            renderCalendar();
+
+            calculateTotalCost();
+        }
+
+        // --- 新增登記先人至後端 (串接 API) ---
+        async function saveNewMemorial() {
+            const name = document.getElementById('new-mem-name').value.trim();
+            const birth = document.getElementById('new-mem-birth').value.trim() || '不詳';
+            const death = document.getElementById('new-mem-death').value.trim() || '不詳';
+            const location = document.getElementById('new-mem-location').value.trim();
+            const desc = document.getElementById('new-mem-desc').value.trim() || '無特定位置備註。';
+
+            if (!name || !location) {
+                showToast('請填寫「姓名」並在「虛擬地圖點選」安放地點！');
+                return;
+            }
+
+            if (useSimulation) {
+                const newAncestor = {
+                    id: `sim_anc_${Date.now()}`,
+                    name,
+                    birth,
+                    death,
+                    location,
+                    desc
+                };
+                const list = JSON.parse(localStorage.getItem('sim_ancestors') || '[]');
+                list.push(newAncestor);
+                localStorage.setItem('sim_ancestors', JSON.stringify(list));
+
+                document.getElementById('new-mem-name').value = '';
+                document.getElementById('new-mem-birth').value = '';
+                document.getElementById('new-mem-death').value = '';
+                document.getElementById('new-mem-location').value = '';
+                document.getElementById('new-mem-desc').value = '';
+
+                toggleAddMemorialModal(false);
+                await loadAncestors();
+                showToast('先人名冊登記成功！(內置模擬儲存)');
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/ancestors', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, birth, death, location, desc })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '登記失敗');
+                
+                document.getElementById('new-mem-name').value = '';
+                document.getElementById('new-mem-birth').value = '';
+                document.getElementById('new-mem-death').value = '';
+                document.getElementById('new-mem-location').value = '';
+                document.getElementById('new-mem-desc').value = '';
+
+                toggleAddMemorialModal(false);
+                await loadAncestors();
+                showToast('先人名冊登記成功！');
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        // --- 影音回報專區互動邏輯 (後端串接) ---
+        async function loadBookings() {
+            if (useSimulation) {
+                bookings = JSON.parse(localStorage.getItem('sim_bookings') || '[]');
+                renderReportsFeed('all');
+                updateBookingImportDropdown();
+                updateReportFilterDropdown();
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/orders');
+                if (res.ok) {
+                    bookings = await res.json();
+                    renderReportsFeed('all');
+                    updateBookingImportDropdown();
+                    updateReportFilterDropdown();
+                }
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function updateReportFilterDropdown() {
+            const filterDropdown = document.getElementById('report-filter');
+            if (!filterDropdown) return;
+            filterDropdown.innerHTML = '<option value="all">-- 全部先人影音回報 --</option>';
+            
+            const uniqueDeceased = [...new Set(bookings.map(bk => bk.targetDeceased))];
+            uniqueDeceased.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `只看: ${name}`;
+                filterDropdown.appendChild(opt);
+            });
+        }
+
+        function filterReportsByAncestor() {
+            const filterDropdown = document.getElementById('report-filter');
+            if (!filterDropdown) return;
+            renderReportsFeed(filterDropdown.value);
+        }
+
+        const REPORT_VARIANT_STYLE = {
+            pending: { border: 'hover:border-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse', footer: 'text-amber-600', footerLabel: '排程詳細', showAddons: false },
+            completed: { border: 'hover:border-emerald-400', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', footer: 'text-emerald-600', footerLabel: '圓滿影音', showAddons: true }
+        };
+
+        function createReportRow(bk, variant) {
+            const style = REPORT_VARIANT_STYLE[variant];
+            const row = document.createElement('div');
+            row.className = `bg-hipster-card border border-hipster-border ${style.border} rounded-xl p-3 flex items-center justify-between transition active:scale-[0.99] cursor-pointer shadow-2xs`;
+            row.onclick = () => openReportDetail(bk.id);
+            row.innerHTML = `
+                <div class="space-y-0.5 flex-grow pr-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] text-gray-400 font-mono font-bold">${bk.date}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 ${style.badge} border rounded font-bold">${bk.status}</span>
+                    </div>
+                    <h4 class="font-bold text-xs text-sage-800 tracking-wide">${bk.service}</h4>
+                    <div class="text-[10px] text-gray-500">先人: <span class="font-bold text-sage-700">${bk.targetDeceased}</span></div>
+                    ${style.showAddons && bk.addons ? `<div class="text-[9px] text-hipster-accent font-medium truncate max-w-[200px]">加購: ${bk.addons}</div>` : ''}
+                </div>
+                <div class="flex-shrink-0 flex items-center space-x-1 ${style.footer} font-bold text-xs">
+                    <span>${style.footerLabel}</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+            `;
+            return row;
+        }
+
+        function renderReportGroup(container, list, variant, emptyText) {
+            container.innerHTML = '';
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 bg-hipster-card border border-hipster-border border-dashed rounded-xl text-[11px] text-gray-400 font-light">
+                        ${emptyText}
+                    </div>
+                `;
+                return;
+            }
+            list.forEach(bk => container.appendChild(createReportRow(bk, variant)));
+        }
+
+        function renderReportsFeed(filterTarget) {
+            const pendingContainer = document.getElementById('pending-reports-container');
+            const completedContainer = document.getElementById('completed-reports-container');
+            if (!pendingContainer || !completedContainer) return;
+
+            const filteredBookings = filterTarget === 'all'
+                ? bookings.filter(bk => ['已圓滿', '進行中', '安排中'].includes(bk.status))
+                : bookings.filter(bk => bk.targetDeceased === filterTarget);
+
+            const pendingList = filteredBookings.filter(bk => bk.status === '安排中' || bk.status === '進行中');
+            const completedList = filteredBookings.filter(bk => bk.status === '已圓滿');
+
+            renderReportGroup(pendingContainer, pendingList, 'pending', '目前沒有排程中或進行中的代拜委託。');
+            renderReportGroup(completedContainer, completedList, 'completed', '目前尚無圓滿結束的歷史影音回報。');
+
+            safeCreateIcons();
+        }
+
+        function openReportDetail(id) {
+            const bk = bookings.find(item => item.id === id);
+            if (!bk) return;
+
+            const modalDate = document.getElementById('detail-modal-date');
+            const modalService = document.getElementById('detail-modal-service');
+            const modalDeceased = document.getElementById('detail-modal-deceased');
+            const modalPray = document.getElementById('detail-modal-pray');
+            const modalText = document.getElementById('detail-modal-text');
+            const modalId = document.getElementById('detail-modal-id');
+
+            if (modalDate) modalDate.textContent = bk.date;
+            if (modalService) modalService.textContent = bk.service;
+            if (modalDeceased) modalDeceased.textContent = bk.targetDeceased;
+            if (modalPray) modalPray.textContent = bk.pray;
+            if (modalText) modalText.textContent = bk.feedbackText || "現場影音回報正在錄製中，圓滿完成後將在此即時更新。";
+            if (modalId) modalId.textContent = `合約編號: ${bk.id}`;
+
+            const addonsRow = document.getElementById('detail-modal-addons-row');
+            if (bk.addons) {
+                if (addonsRow) addonsRow.classList.remove('hidden');
+                const addOnEl = document.getElementById('detail-modal-addons');
+                if (addOnEl) addOnEl.textContent = bk.addons;
+            } else {
+                if (addonsRow) addonsRow.classList.add('hidden');
+            }
+
+            const videoWrapper = document.getElementById('detail-modal-video-wrapper');
+            if (bk.feedbackImg && bk.status === '已圓滿' && videoWrapper) {
+                videoWrapper.classList.remove('hidden');
+                videoWrapper.style.backgroundImage = `url('${bk.feedbackImg}')`;
+                videoWrapper.onclick = () => {
+                    openVideoPlayer(bk.targetDeceased, bk.feedbackImg);
+                };
+                videoWrapper.innerHTML = `
+                    <div class="absolute inset-0 bg-black/35 group-hover:bg-black/25 transition-all flex flex-col justify-between p-3">
+                        <div class="flex items-center space-x-1 text-[8px] text-emerald-400 font-mono tracking-wider">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span>現場防偽驗證</span>
+                        </div>
+                        <div class="w-9 h-9 bg-white/95 text-sage-800 rounded-full flex items-center justify-center self-center shadow-md transition transform group-hover:scale-105 active:scale-95">
+                            <i data-lucide="play" class="w-4.5 h-4.5 fill-current translate-x-0.5 text-sage-600"></i>
+                        </div>
+                        <div class="flex justify-between items-end text-[9px] text-white">
+                            <span class="font-bold">承辦：現場禮儀專員</span>
+                            <span class="bg-black/45 px-2 py-0.5 rounded font-mono">01:24</span>
+                        </div>
+                    </div>
+                `;
+            } else if (videoWrapper) {
+                videoWrapper.classList.add('hidden');
+            }
+
+            const stepsContainer = document.getElementById('detail-modal-steps-container');
+            const stepsGrid = document.getElementById('detail-modal-steps-grid');
+            if (stepsGrid) stepsGrid.innerHTML = '';
+            
+            if (bk.mediaSteps && bk.mediaSteps.length > 0 && stepsContainer && stepsGrid) {
+                stepsContainer.classList.remove('hidden');
+                bk.mediaSteps.forEach(st => {
+                    const imgUrl = (bk.status === '已圓滿') ? st.img : 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=200&auto=format&fit=crop';
+                    const labelText = (bk.status === '已圓滿') ? st.name.split('. ')[1] : '待執行';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'group relative aspect-square bg-gray-50 rounded border border-hipster-border overflow-hidden cursor-pointer';
+                    div.innerHTML = `
+                        <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-all" alt="${st.name}">
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center text-[8px] text-white text-center font-serif opacity-90 p-0.5">
+                            ${labelText}
+                        </div>
+                    `;
+                    stepsGrid.appendChild(div);
+                });
+            } else if (stepsContainer) {
+                stepsContainer.classList.add('hidden');
+            }
+
+            const detailModal = document.getElementById('report-detail-modal');
+            if (detailModal) detailModal.classList.remove('hidden');
+            safeCreateIcons();
+        }
+
+        function closeReportDetail() {
+            const detailModal = document.getElementById('report-detail-modal');
+            if (detailModal) detailModal.classList.add('hidden');
+        }
+
+        // --- 錄影播放器模擬控制 ---
+        function openVideoPlayer(targetName, bgImage) {
+            const overlayTarget = document.getElementById('video-overlay-target');
+            const bgFrame = document.getElementById('video-bg-frame');
+            
+            if (overlayTarget) overlayTarget.textContent = targetName;
+            if (bgFrame) bgFrame.style.backgroundImage = `url('${bgImage}')`;
+            
+            videoProgress = 0;
+            updateProgressUI();
+            
+            const playerModal = document.getElementById('video-player-modal');
+            if (playerModal) playerModal.classList.remove('hidden');
+        }
+
+        function closeVideoPlayer() {
+            stopVideoSimulation();
+            const playerModal = document.getElementById('video-player-modal');
+            if (playerModal) playerModal.classList.add('hidden');
+        }
+
+        function togglePlaySimulation() {
+            if (videoPlaying) {
+                pauseVideoSimulation();
+            } else {
+                startVideoSimulation();
+            }
+        }
+
+        function startVideoSimulation() {
+            videoPlaying = true;
+            const statusTxt = document.getElementById('video-status-text');
+            if (statusTxt) {
+                statusTxt.textContent = '播放中 (安全核驗防偽中)';
+                statusTxt.className = 'font-bold text-emerald-400';
+            }
+            
+            const iconCenter = document.getElementById('video-center-icon');
+            if (iconCenter) {
+                iconCenter.setAttribute('data-lucide', 'pause');
+                iconCenter.classList.remove('translate-x-0.5');
+            }
+            const iconCtrl = document.getElementById('video-control-play-icon');
+            if (iconCtrl) iconCtrl.setAttribute('data-lucide', 'pause');
+            safeCreateIcons();
+
+            const bgFrame = document.getElementById('video-bg-frame');
+            if (bgFrame) {
+                bgFrame.classList.remove('brightness-75');
+                bgFrame.classList.add('brightness-50');
+            }
+
+            videoInterval = setInterval(() => {
+                videoProgress += 1;
+                if (videoProgress >= 84) {
+                    videoProgress = 84;
+                    pauseVideoSimulation();
+                    showToast('實地錄製已圓滿播放完畢');
+                }
+                updateProgressUI();
+            }, 1000);
+        }
+
+        function pauseVideoSimulation() {
+            videoPlaying = false;
+            const statusTxt = document.getElementById('video-status-text');
+            if (statusTxt) {
+                statusTxt.textContent = '暫停中';
+                statusTxt.className = 'font-bold text-white/80';
+            }
+            
+            const iconCenter = document.getElementById('video-center-icon');
+            if (iconCenter) {
+                iconCenter.setAttribute('data-lucide', 'play');
+                iconCenter.classList.add('translate-x-0.5');
+            }
+            const iconCtrl = document.getElementById('video-control-play-icon');
+            if (iconCtrl) iconCtrl.setAttribute('data-lucide', 'play');
+            safeCreateIcons();
+
+            const bgFrame = document.getElementById('video-bg-frame');
+            if (bgFrame) {
+                bgFrame.classList.remove('brightness-50');
+                bgFrame.classList.add('brightness-75');
+            }
+
+            clearInterval(videoInterval);
+        }
+
+        function stopVideoSimulation() {
+            pauseVideoSimulation();
+            videoProgress = 0;
+            updateProgressUI();
+        }
+
+        function updateProgressUI() {
+            const pct = (videoProgress / 84) * 100;
+            const progressBar = document.getElementById('video-progress-bar');
+            if (progressBar) progressBar.style.width = `${pct}%`;
+
+            const currentMin = String(Math.floor(videoProgress / 60)).padStart(2, '0');
+            const currentSec = String(videoProgress % 60).padStart(2, '0');
+            const timer = document.getElementById('video-timer');
+            if (timer) timer.textContent = `${currentMin}:${currentSec} / 01:24`;
+        }
+
+        function seekVideoSimulation(event) {
+            const bar = event.currentTarget;
+            const rect = bar.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const pct = clickX / rect.width;
+            
+            videoProgress = Math.floor(pct * 84);
+            updateProgressUI();
+            
+            if (videoPlaying) {
+                clearInterval(videoInterval);
+                startVideoSimulation();
+            }
+        }
+
+        // --- 每日平安籤 ---
+        const fortunePool = [
+            { level: '和風暢意', poem: '春風細雨潤無聲\n青山翠木百事興\n靜心感恩行孝道\n闔家康泰萬象新', guide: '今日平安和順。以誠懇的感恩心為逝者送上一份實體祭禮，便能將愛與祝福化作心靈安頓的溫暖力量。' },
+            { level: '禪定大吉', poem: '一輪明月照乾坤\n百事亨通萬象新\n心誠自有神仙助\n家門吉慶福臨門', guide: '心中澄澈。與家人、祖先的緣分是生命的源頭，今日適合在心中誠心默念祝福，讓善意生生不息。' },
+            { level: '歲月靜好', poem: '莫嫌歲寒松柏綠\n自有春光發好枝\n安分守己心無妄\n時來運轉展芳華', guide: '凡事莫急。靜心整理家務，登記先人的詳細資料與墓位，將回憶好好安放，生活自然充盈喜樂。' }
+        ];
+
+        function drawDailyFortune() {
+            const rand = fortunePool[Math.floor(Math.random() * fortunePool.length)];
+            const lvl = document.getElementById('fortune-level');
+            const poem = document.getElementById('fortune-poem');
+            const guide = document.getElementById('fortune-guide');
+
+            if (lvl) lvl.textContent = rand.level;
+            if (poem) poem.innerHTML = rand.poem.replace(/\n/g, '<br>');
+            if (guide) guide.textContent = rand.guide;
+            
+            const modal = document.getElementById('fortune-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeFortuneModal() {
+            const modal = document.getElementById('fortune-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // --- 個人帳號管理與安全驗證模組 ---
+        function onEmailChange() {
+            const inputVal = document.getElementById('profile-email').value.trim();
+            if (currentUser && inputVal !== currentUser.email) {
+                emailVerified = false;
+            } else {
+                emailVerified = currentUser ? currentUser.emailVerified : false;
+            }
+            updateVerificationUI();
+        }
+
+        function onPhoneChange() {
+            const inputVal = document.getElementById('profile-phone').value.trim();
+            if (currentUser && inputVal !== currentUser.phone) {
+                phoneVerified = false;
+            } else {
+                phoneVerified = currentUser ? currentUser.phoneVerified : false;
+            }
+            updateVerificationUI();
+        }
+
+        function updateVerificationUI() {
+            const emailBadge = document.getElementById('profile-email-verified-badge');
+            const emailBtn = document.getElementById('btn-verify-email');
+            const phoneBadge = document.getElementById('profile-phone-verified-badge');
+            const phoneBtn = document.getElementById('btn-verify-phone');
+
+            if (emailVerified) {
+                if (emailBadge) emailBadge.classList.remove('hidden');
+                if (emailBtn) emailBtn.classList.add('hidden');
+            } else {
+                if (emailBadge) emailBadge.classList.add('hidden');
+                if (emailBtn) emailBtn.classList.remove('hidden');
+            }
+
+            if (phoneVerified) {
+                if (phoneBadge) phoneBadge.classList.remove('hidden');
+                if (phoneBtn) phoneBtn.classList.add('hidden');
+            } else {
+                if (phoneBadge) phoneBadge.classList.add('hidden');
+                if (phoneBtn) phoneBtn.classList.remove('hidden');
+            }
+            safeCreateIcons();
+        }
+
+        function sendVerificationCode(type) {
+            currentVerificationType = type;
+            const targetVal = (type === 'email') 
+                ? document.getElementById('profile-email').value.trim() 
+                : document.getElementById('profile-phone').value.trim();
+
+            if (!targetVal) {
+                showToast(`請先輸入正確的 ${type === 'email' ? '電子信箱' : '聯絡電話'}`);
+                return;
+            }
+
+            simulatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            const titleEl = document.getElementById('verify-modal-title');
+            const descEl = document.getElementById('verify-modal-desc');
+            const codeEl = document.getElementById('verify-modal-code');
+            const inputEl = document.getElementById('verify-code-input');
+
+            if (titleEl) titleEl.textContent = type === 'email' ? '驗證帳號/電子信箱' : '驗證聯絡電話';
+            if (descEl) descEl.textContent = `已將安全驗證碼發送至：${targetVal}，請在下方輸入完成安全比對。`;
+            if (codeEl) codeEl.textContent = simulatedCode;
+            if (inputEl) inputEl.value = '';
+
+            toggleVerificationModal(true);
+            showToast(`驗證碼已模擬發送至 ${targetVal}`);
+        }
+
+        function toggleVerificationModal(show) {
+            const modal = document.getElementById('verification-modal');
+            if (modal) modal.classList.toggle('hidden', !show);
+        }
+
+        function confirmVerificationCode() {
+            const inputVal = document.getElementById('verify-code-input').value.trim();
+            if (inputVal === simulatedCode) {
+                if (currentVerificationType === 'email') {
+                    emailVerified = true;
+                    if (currentUser) {
+                        currentUser.emailVerified = true;
+                        currentUser.email = document.getElementById('profile-email').value.trim();
+                    }
+                    showToast('帳號 (信箱) 驗證通過 🙏');
+                } else {
+                    phoneVerified = true;
+                    if (currentUser) {
+                        currentUser.phoneVerified = true;
+                        currentUser.phone = document.getElementById('profile-phone').value.trim();
+                    }
+                    showToast('聯絡電話驗證通過 🙏');
+                }
+                updateVerificationUI();
+                toggleVerificationModal(false);
+            } else {
+                showToast('驗證碼比對失敗，請確認模擬提示之驗證碼');
+            }
+        }
+
+        // --- 更新會員基本資料至後端 (串接 API) ---
+        async function handleProfileUpdate(event) {
+            event.preventDefault();
+
+            if (!emailVerified) {
+                showToast('您已修改帳號信箱，需先點擊「驗證」完成二維安全確認');
+                return;
+            }
+            if (!phoneVerified) {
+                showToast('您已修改聯絡電話，需先點擊「驗證」完成二維安全確認');
+                return;
+            }
+
+            const email = document.getElementById('profile-email').value.trim();
+            const name = document.getElementById('profile-name').value.trim();
+            const phone = document.getElementById('profile-phone').value.trim();
+
+            if (useSimulation) {
+                currentUser.email = email;
+                currentUser.name = name;
+                currentUser.phone = phone;
+
+                localStorage.setItem('sim_current_user', JSON.stringify(currentUser));
+                
+                const users = JSON.parse(localStorage.getItem('sim_users') || '[]');
+                const idx = users.findIndex(u => u.email === email);
+                if (idx !== -1) {
+                    users[idx].name = name;
+                    users[idx].phone = phone;
+                    localStorage.setItem('sim_users', JSON.stringify(users));
+                }
+
+                const userNameSpan = document.getElementById('header-user-name');
+                if (userNameSpan) userNameSpan.textContent = name;
+
+                showToast('個人帳號資料修改成功 🙏 (內置模擬儲存)');
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/user/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, phone, email, nickname: '' })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '基本資料更新失敗');
+
+                currentUser.email = email;
+                currentUser.name = name;
+                currentUser.phone = phone;
+
+                const userNameSpan = document.getElementById('header-user-name');
+                if (userNameSpan) userNameSpan.textContent = name;
+
+                showToast('個人帳號資料修改成功 🙏');
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            const showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            if (icon) icon.setAttribute('data-lucide', showing ? 'eye' : 'eye-off');
+            safeCreateIcons();
+        }
+
+        // --- 更新會員密碼至後端 (串接 API) ---
+        async function handlePasswordUpdate(event) {
+            event.preventDefault();
+
+            const oldPass = document.getElementById('password-old').value;
+            const newPass = document.getElementById('password-new').value;
+            const confirmPass = document.getElementById('password-new-confirm').value;
+
+            if (newPass !== confirmPass) {
+                showToast('兩次輸入的新密碼不一致');
+                return;
+            }
+
+            if (newPass === oldPass) {
+                showToast('新密碼不能與原密碼相同');
+                return;
+            }
+
+            if (useSimulation) {
+                const users = JSON.parse(localStorage.getItem('sim_users') || '[]');
+                const idx = users.findIndex(u => u.email === currentUser.email);
+                if (idx === -1 || users[idx].password !== oldPass) {
+                    showToast('原密碼輸入不正確 (模擬)');
+                    return;
+                }
+                users[idx].password = newPass;
+                localStorage.setItem('sim_users', JSON.stringify(users));
+                
+                showToast('密碼安全修改完畢！系統將引導您重新登入 (模擬)');
+
+                ['password-old', 'password-new', 'password-new-confirm'].forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.value = '';
+                        input.type = 'password';
+                    }
+                });
+                safeCreateIcons();
+
+                setTimeout(() => {
+                    handleLogout();
+                }, 1500);
+                return;
+            }
+
+            try {
+                const res = await apiRequest('/api/user/update-password', {
+                    method: 'PUT',
+                    body: JSON.stringify({ oldPassword: oldPass, newPassword: newPass })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || '密碼變更失敗');
+
+                showToast('密碼安全修改完畢！系統將於 1.5 秒後將您登出並引導重新登入');
+
+                ['password-old', 'password-new', 'password-new-confirm'].forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.value = '';
+                        input.type = 'password';
+                    }
+                });
+                safeCreateIcons();
+
+                setTimeout(() => {
+                    handleLogout();
+                }, 1500);
+            } catch (err) {
+                showToast(err.message);
+            }
+        }
+
+        // --- Toast 提示功能 ---
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            
+            if (!toast || !toastMsg) return;
+            toastMsg.textContent = message;
+            toast.classList.remove('translate-y-12', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-12', 'opacity-0');
+            }, 2500);
+        }
+    </script>
 </body>
 </html>
